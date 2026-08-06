@@ -25,7 +25,7 @@ const buckets = await supabase.storage.listBuckets();
 
 console.log(
   "Buckets:",
-  buckets.data?.map((b) => b.name),
+  buckets.data?.map((bucket) => bucket.name),
 );
 
 console.log(
@@ -34,11 +34,11 @@ console.log(
 );
 
   const { error } = await supabase.storage
-    .from("npc-portraits")
-    .upload(fileName, buffer, {
-      contentType: "image/webp",
-      upsert: false,
-    });
+  .from("npc-portraits")
+  .upload(fileName, buffer, {
+    contentType: "image/webp",
+    upsert: false,
+  });
 
   if (error) {
     throw new Error(

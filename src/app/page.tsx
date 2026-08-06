@@ -204,6 +204,20 @@ const [isStartingCheckout, setIsStartingCheckout] =
   useState(false);
 
   useEffect(() => {
+  const savedPortraitStyle =
+    window.localStorage.getItem(
+      "npc-recruiter-portrait-style",
+    );
+
+  if (
+    savedPortraitStyle &&
+    portraitStyles.includes(savedPortraitStyle)
+  ) {
+    setPortraitStyle(savedPortraitStyle);
+  }
+}, []);
+
+useEffect(() => {
   const supabase = createClient();
 
   async function loadGuildName() {
@@ -1225,7 +1239,14 @@ async function startTokenCheckout(
                 <button
                   key={style}
                   type="button"
-                  onClick={() => setPortraitStyle(style)}
+                  onClick={() => {
+  setPortraitStyle(style);
+
+  window.localStorage.setItem(
+    "npc-recruiter-portrait-style",
+    style,
+  );
+}}
                   className={
                     portraitStyle === style
                       ? "border border-[#292720] bg-[#292720] px-2 py-2 text-[11px] font-bold text-white"

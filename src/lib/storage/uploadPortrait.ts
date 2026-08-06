@@ -34,7 +34,7 @@ console.log(
 );
 
   const { error } = await supabase.storage
-  .from("NPC-Portraits")
+  .from("npc-Portraits")
   .upload(fileName, buffer, {
     contentType: "image/webp",
     upsert: false,
@@ -49,7 +49,7 @@ console.log(
   const {
     data: { publicUrl },
   } = supabase.storage
-    .from("NPC-Portraits")
+    .from("npc-Portraits")
     .getPublicUrl(fileName);
 
   return publicUrl;

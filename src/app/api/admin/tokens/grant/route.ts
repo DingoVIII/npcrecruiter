@@ -98,10 +98,19 @@ export async function POST(request: Request) {
         usersError,
       );
 
-      return NextResponse.json(
-        { error: "The guild member could not be located." },
-        { status: 500 },
-      );
+      console.error(
+  "Guild member lookup failed:",
+  usersError,
+);
+
+return NextResponse.json(
+  {
+    error:
+      usersError.message ??
+      "The guild member could not be located.",
+  },
+  { status: 500 },
+);
     }
 
     const targetUser = usersResult.users.find(
@@ -140,13 +149,19 @@ export async function POST(request: Request) {
         grantError,
       );
 
-      return NextResponse.json(
-        {
-          error:
-            "The Guild Tokens could not be granted.",
-        },
-        { status: 500 },
-      );
+     console.error(
+  "Guild Token grant failed:",
+  grantError,
+);
+
+return NextResponse.json(
+  {
+    error:
+      grantError.message ??
+      "The Guild Tokens could not be granted.",
+  },
+  { status: 500 },
+);
     }
 
     return NextResponse.json({

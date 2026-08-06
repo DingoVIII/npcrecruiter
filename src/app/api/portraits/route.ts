@@ -800,7 +800,6 @@ return {
       ),
     );
 
-
     console.log(
   `[Portrait Batch] Completed ${portraits.length} portraits in ${
     Date.now() - batchStartedAt

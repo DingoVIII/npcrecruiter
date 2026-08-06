@@ -42,9 +42,9 @@ export async function POST(request: Request) {
     }
 
     const requestedCount = Math.min(
-      9,
-      Math.max(1, Math.floor(body.count ?? 9)),
-    );
+  4,
+  Math.max(1, Math.floor(body.count ?? 4)),
+);
 
     const prompt = buildNpcGenerationPrompt({
       ...body,

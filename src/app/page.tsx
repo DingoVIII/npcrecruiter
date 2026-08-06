@@ -385,11 +385,11 @@ function updateNpc(index: number, updatedNpc: Npc) {
       const result = (await response.json()) as RecruitResponse;
 
       setNpcs(
-        result.npcs.map((npc) => ({
-          ...npc,
-          hired: false,
-        })),
-      );
+  result.npcs.slice(0, 4).map((npc) => ({
+    ...npc,
+    hired: false,
+  })),
+);
     } catch (error) {
       console.error("Recruitment failed:", error);
 
@@ -406,7 +406,7 @@ function updateNpc(index: number, updatedNpc: Npc) {
   async function generatePortraits() {
   const hiredNpcs = npcs.filter((npc) => npc.hired);
 
-  if (hiredNpcs.length !== 9 || isGeneratingPortraits) {
+  if (hiredNpcs.length !== 4 || isGeneratingPortraits) {
     return;
   }
 
@@ -680,7 +680,7 @@ const unwantedPortraitCount = npcs.filter(
 ).length;
 
   async function saveCast() {
-  if (npcs.length !== 9 || isSavingCast) {
+  if (npcs.length !== 4 || isSavingCast) {
     return;
   }
 
@@ -1141,8 +1141,8 @@ async function startTokenCheckout(
     {npcs.length === 0 ? (
       <EmptyRoster />
     ) : (
-      <div className="grid grid-cols-3 gap-2">
-        {npcs.map((npc, index) => (
+     <div className="grid grid-cols-2 gap-3">
+  {npcs.slice(0, 4).map((npc, index) => (
   <CompactNpcCard
     key={`${npc.name}-${index}`}
     npc={npc}
@@ -1219,8 +1219,8 @@ async function startTokenCheckout(
               ))}
             </div>
 
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {Array.from({ length: 9 }, (_, index) => {
+            <div className="mt-3 grid grid-cols-2 gap-3">
+  {Array.from({ length: 4 }, (_, index) => {
                 const npc = npcs[index];
                 return (
                   <PortraitSlot
@@ -1784,8 +1784,8 @@ function NpcEditField({
 
 function EmptyRoster() {
   return (
-    <div className="grid grid-cols-3 gap-2">
-      {Array.from({ length: 9 }, (_, index) => (
+    <div className="grid grid-cols-2 gap-3">
+  {Array.from({ length: 4 }, (_, index) => (
         <div
           key={index}
           className="relative aspect-[20/23] w-full overflow-hidden border border-[#8f713b] bg-[#e9ddc5] p-[7px] shadow-[2px_3px_0_rgba(72,55,28,0.12)]"

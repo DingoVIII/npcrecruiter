@@ -16,6 +16,23 @@ export async function uploadPortrait(
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")}.webp`;
 
+    console.log(
+  "SUPABASE URL:",
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+);
+
+const buckets = await supabase.storage.listBuckets();
+
+console.log(
+  "Buckets:",
+  buckets.data?.map((b) => b.name),
+);
+
+console.log(
+  "Bucket error:",
+  buckets.error,
+);
+
   const { error } = await supabase.storage
     .from("npc-portraits")
     .upload(fileName, buffer, {

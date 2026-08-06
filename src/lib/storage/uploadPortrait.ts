@@ -51,7 +51,7 @@ if (error) {
   const {
     data: { publicUrl },
   } = supabase.storage
-    .from("npc-Portraits")
+    .from("npc-portraits")
     .getPublicUrl(fileName);
 
   return publicUrl;

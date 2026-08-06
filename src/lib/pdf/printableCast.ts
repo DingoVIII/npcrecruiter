@@ -11,23 +11,25 @@ export type PrintableNpc = {
   hired?: boolean;
 };
 
-const PAGE_WIDTH = 8.5;
-const PAGE_HEIGHT = 11;
+const PAGE_WIDTH = 11;
+const PAGE_HEIGHT = 8.5;
 
-const COLUMNS = 3;
-const ROWS = 3;
+const PAGE_MARGIN = 0.28;
+const FOLD_X = PAGE_WIDTH / 2;
 
-const CARD_WIDTH = 2.5;
-const CARD_HEIGHT = 3.3;
+const HALF_WIDTH = PAGE_WIDTH / 2;
 
-const GRID_WIDTH = CARD_WIDTH * COLUMNS;
-const GRID_HEIGHT = CARD_HEIGHT * ROWS;
+const HALF_CONTENT_WIDTH =
+  HALF_WIDTH - PAGE_MARGIN * 2;
 
-const GRID_LEFT = (PAGE_WIDTH - GRID_WIDTH) / 2;
-const GRID_TOP = (PAGE_HEIGHT - GRID_HEIGHT) / 2;
+const GRID_GAP = 0.14;
 
-const CARD_INSET = 0.1;
-const CONTENT_INSET = 0.15;
+const CELL_WIDTH =
+  (HALF_CONTENT_WIDTH - GRID_GAP) / 2;
+
+const CELL_HEIGHT = 3.65;
+
+const GRID_TOP = 0.72;
 
 const PAPER_RGB = {
   r: 255,
@@ -59,68 +61,158 @@ const RULE_RGB = {
   b: 143,
 };
 
-function getCardPosition(index: number) {
-  const row = Math.floor(index / COLUMNS);
-  const column = index % COLUMNS;
-
-  return {
-    x: GRID_LEFT + column * CARD_WIDTH,
-    y: GRID_TOP + row * CARD_HEIGHT,
-    row,
-    column,
-  };
-}
-
 function setInk(doc: jsPDF) {
-  doc.setTextColor(INK_RGB.r, INK_RGB.g, INK_RGB.b);
-  doc.setDrawColor(INK_RGB.r, INK_RGB.g, INK_RGB.b);
+  doc.setTextColor(
+    INK_RGB.r,
+    INK_RGB.g,
+    INK_RGB.b,
+  );
+
+  doc.setDrawColor(
+    INK_RGB.r,
+    INK_RGB.g,
+    INK_RGB.b,
+  );
 }
 
 function setGold(doc: jsPDF) {
-  doc.setTextColor(GOLD_RGB.r, GOLD_RGB.g, GOLD_RGB.b);
-  doc.setDrawColor(GOLD_RGB.r, GOLD_RGB.g, GOLD_RGB.b);
+  doc.setTextColor(
+    GOLD_RGB.r,
+    GOLD_RGB.g,
+    GOLD_RGB.b,
+  );
+
+  doc.setDrawColor(
+    GOLD_RGB.r,
+    GOLD_RGB.g,
+    GOLD_RGB.b,
+  );
 }
 
 function drawPageBackground(doc: jsPDF) {
-  doc.setFillColor(PAPER_RGB.r, PAPER_RGB.g, PAPER_RGB.b);
-  doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, "F");
-}
-
-function drawCutGuides(doc: jsPDF) {
-  doc.setDrawColor(RULE_RGB.r, RULE_RGB.g, RULE_RGB.b);
-  doc.setLineWidth(0.008);
-  doc.setLineDashPattern([0.06, 0.05], 0);
-
-  doc.rect(
-    GRID_LEFT,
-    GRID_TOP,
-    GRID_WIDTH,
-    GRID_HEIGHT,
+  doc.setFillColor(
+    PAPER_RGB.r,
+    PAPER_RGB.g,
+    PAPER_RGB.b,
   );
 
-  for (let column = 1; column < COLUMNS; column += 1) {
-    const x = GRID_LEFT + column * CARD_WIDTH;
+  doc.rect(
+    0,
+    0,
+    PAGE_WIDTH,
+    PAGE_HEIGHT,
+    "F",
+  );
+}
 
-    doc.line(
-      x,
-      GRID_TOP,
-      x,
-      GRID_TOP + GRID_HEIGHT,
-    );
-  }
+function drawFoldGuide(doc: jsPDF) {
+  doc.setDrawColor(
+    RULE_RGB.r,
+    RULE_RGB.g,
+    RULE_RGB.b,
+  );
 
-  for (let row = 1; row < ROWS; row += 1) {
-    const y = GRID_TOP + row * CARD_HEIGHT;
+  doc.setLineWidth(0.01);
+  doc.setLineDashPattern([0.08, 0.06], 0);
 
-    doc.line(
-      GRID_LEFT,
-      y,
-      GRID_LEFT + GRID_WIDTH,
-      y,
-    );
-  }
+  doc.line(
+    FOLD_X,
+    0.2,
+    FOLD_X,
+    PAGE_HEIGHT - 0.2,
+  );
 
   doc.setLineDashPattern([], 0);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(6.5);
+
+  doc.setTextColor(
+    RULE_RGB.r,
+    RULE_RGB.g,
+    RULE_RGB.b,
+  );
+
+  doc.text(
+    "FOLD",
+    FOLD_X,
+    PAGE_HEIGHT - 0.12,
+    {
+      align: "center",
+    },
+  );
+}
+
+function drawHalfHeading(
+  doc: jsPDF,
+  title: string,
+  centreX: number,
+) {
+  setInk(doc);
+
+  doc.setFont("times", "bold");
+  doc.setFontSize(15);
+
+  doc.text(
+    title.toUpperCase(),
+    centreX,
+    0.38,
+    {
+      align: "center",
+    },
+  );
+
+  doc.setDrawColor(
+    GOLD_RGB.r,
+    GOLD_RGB.g,
+    GOLD_RGB.b,
+  );
+
+  doc.setLineWidth(0.018);
+
+  doc.line(
+    centreX - 1.35,
+    0.49,
+    centreX + 1.35,
+    0.49,
+  );
+
+  doc.setFont("times", "italic");
+  doc.setFontSize(7.5);
+
+  doc.setTextColor(
+    GOLD_RGB.r,
+    GOLD_RGB.g,
+    GOLD_RGB.b,
+  );
+
+  doc.text(
+    "NPC Recruiter",
+    centreX,
+    0.61,
+    {
+      align: "center",
+    },
+  );
+}
+
+function getCellPosition(
+  index: number,
+  halfStartX: number,
+) {
+  const row = Math.floor(index / 2);
+  const column = index % 2;
+
+  return {
+    x:
+      halfStartX +
+      PAGE_MARGIN +
+      column * (CELL_WIDTH + GRID_GAP),
+
+    y:
+      GRID_TOP +
+      row * (CELL_HEIGHT + GRID_GAP),
+  };
 }
 
 function truncateText(
@@ -136,12 +228,46 @@ function truncateText(
 
   while (
     shortened.length > 1 &&
-    doc.getTextWidth(`${shortened}...`) > maxWidth
+    doc.getTextWidth(`${shortened}...`) >
+      maxWidth
   ) {
     shortened = shortened.slice(0, -1);
   }
 
   return `${shortened.trim()}...`;
+}
+
+function drawNumberBadge(
+  doc: jsPDF,
+  number: number,
+  x: number,
+  y: number,
+) {
+  doc.setFillColor(
+    INK_RGB.r,
+    INK_RGB.g,
+    INK_RGB.b,
+  );
+
+  doc.circle(
+    x,
+    y,
+    0.13,
+    "F",
+  );
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+
+  doc.text(
+    String(number),
+    x,
+    y + 0.025,
+    {
+      align: "center",
+    },
+  );
 }
 
 function drawSectionLabel(
@@ -151,9 +277,15 @@ function drawSectionLabel(
   y: number,
 ) {
   setGold(doc);
+
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(6.8);
-  doc.text(label.toUpperCase(), x, y);
+  doc.setFontSize(6.6);
+
+  doc.text(
+    label.toUpperCase(),
+    x,
+    y,
+  );
 }
 
 function drawTextCard(
@@ -161,24 +293,59 @@ function drawTextCard(
   npc: PrintableNpc,
   index: number,
 ) {
-  const { x, y } = getCardPosition(index);
+  const { x, y } = getCellPosition(
+    index,
+    FOLD_X,
+  );
 
-  const innerX = x + CARD_INSET;
-  const innerY = y + CARD_INSET;
-  const innerWidth = CARD_WIDTH - CARD_INSET * 2;
-  const innerHeight = CARD_HEIGHT - CARD_INSET * 2;
+  const innerInset = 0.08;
 
-  doc.setFillColor(PAPER_RGB.r, PAPER_RGB.g, PAPER_RGB.b);
-  doc.rect(innerX, innerY, innerWidth, innerHeight, "F");
+  const innerX = x + innerInset;
+  const innerY = y + innerInset;
 
-  doc.setDrawColor(GOLD_RGB.r, GOLD_RGB.g, GOLD_RGB.b);
-  doc.setLineWidth(0.018);
-  doc.rect(innerX, innerY, innerWidth, innerHeight);
+  const innerWidth =
+    CELL_WIDTH - innerInset * 2;
 
-  const contentX = innerX + CONTENT_INSET;
-  const contentWidth = innerWidth - CONTENT_INSET * 2;
+  const innerHeight =
+    CELL_HEIGHT - innerInset * 2;
 
-  const titleHeight = 0.45;
+  doc.setFillColor(
+    PAPER_RGB.r,
+    PAPER_RGB.g,
+    PAPER_RGB.b,
+  );
+
+  doc.rect(
+    innerX,
+    innerY,
+    innerWidth,
+    innerHeight,
+    "F",
+  );
+
+  doc.setDrawColor(
+    GOLD_RGB.r,
+    GOLD_RGB.g,
+    GOLD_RGB.b,
+  );
+
+  doc.setLineWidth(0.02);
+
+  doc.rect(
+    innerX,
+    innerY,
+    innerWidth,
+    innerHeight,
+  );
+
+  drawNumberBadge(
+    doc,
+    index + 1,
+    innerX + 0.17,
+    innerY + 0.18,
+  );
+
+  const titleHeight = 0.55;
 
   doc.setFillColor(
     PALE_GOLD_RGB.r,
@@ -194,7 +361,12 @@ function drawTextCard(
     "F",
   );
 
-  doc.setDrawColor(GOLD_RGB.r, GOLD_RGB.g, GOLD_RGB.b);
+  doc.setDrawColor(
+    GOLD_RGB.r,
+    GOLD_RGB.g,
+    GOLD_RGB.b,
+  );
+
   doc.line(
     innerX,
     innerY + titleHeight,
@@ -202,67 +374,98 @@ function drawTextCard(
     innerY + titleHeight,
   );
 
+  const contentX = innerX + 0.16;
+
+  const contentWidth =
+    innerWidth - 0.32;
+
   setInk(doc);
+
   doc.setFont("times", "bold");
-  doc.setFontSize(11);
+  doc.setFontSize(12.5);
 
   const displayName = truncateText(
     doc,
     npc.name.toUpperCase(),
-    contentWidth,
+    contentWidth - 0.28,
   );
 
   doc.text(
     displayName,
     innerX + innerWidth / 2,
-    innerY + 0.285,
+    innerY + 0.24,
     {
       align: "center",
     },
   );
-
-  let cursorY = innerY + titleHeight + 0.22;
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
 
-  const identity = `${npc.gender} - ${npc.species}`;
+  const identity =
+    `${npc.gender} · ${npc.species}`;
 
   doc.text(
-    truncateText(doc, identity, contentWidth),
+    truncateText(
+      doc,
+      identity,
+      contentWidth,
+    ),
     innerX + innerWidth / 2,
-    cursorY,
+    innerY + 0.42,
     {
       align: "center",
     },
+  );
+
+  let cursorY =
+    innerY + titleHeight + 0.22;
+
+  drawSectionLabel(
+    doc,
+    "Occupation",
+    contentX,
+    cursorY,
   );
 
   cursorY += 0.17;
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7.5);
+  setInk(doc);
 
-  const occupationLines = doc.splitTextToSize(
-    npc.occupation,
-    contentWidth,
-  ) as string[];
+  doc.setFont("times", "bold");
+  doc.setFontSize(9.5);
 
-  const displayedOccupation = occupationLines.slice(0, 2);
+  const occupationLines =
+    doc.splitTextToSize(
+      npc.occupation,
+      contentWidth,
+    ) as string[];
 
   doc.text(
-    displayedOccupation,
-    innerX + innerWidth / 2,
+    occupationLines.slice(0, 2),
+    contentX,
     cursorY,
     {
-      align: "center",
       lineHeightFactor: 1.15,
     },
   );
 
-  cursorY += displayedOccupation.length * 0.13 + 0.11;
+  cursorY +=
+    Math.min(
+      occupationLines.length,
+      2,
+    ) *
+      0.17 +
+    0.1;
 
-  doc.setDrawColor(RULE_RGB.r, RULE_RGB.g, RULE_RGB.b);
+  doc.setDrawColor(
+    RULE_RGB.r,
+    RULE_RGB.g,
+    RULE_RGB.b,
+  );
+
   doc.setLineWidth(0.008);
+
   doc.line(
     contentX,
     cursorY,
@@ -270,7 +473,7 @@ function drawTextCard(
     cursorY,
   );
 
-  cursorY += 0.18;
+  cursorY += 0.19;
 
   drawSectionLabel(
     doc,
@@ -279,32 +482,42 @@ function drawTextCard(
     cursorY,
   );
 
-  cursorY += 0.15;
+  cursorY += 0.18;
 
   setInk(doc);
-  doc.setFont("times", "bold");
-  doc.setFontSize(8.5);
 
-  const personalityLines = doc.splitTextToSize(
-    npc.personality,
-    contentWidth,
-  ) as string[];
+  doc.setFont("times", "normal");
+  doc.setFontSize(9);
 
-  const displayedPersonality =
-    personalityLines.slice(0, 2);
+  const personalityLines =
+    doc.splitTextToSize(
+      npc.personality,
+      contentWidth,
+    ) as string[];
 
   doc.text(
-    displayedPersonality,
+    personalityLines.slice(0, 4),
     contentX,
     cursorY,
     {
-      lineHeightFactor: 1.18,
+      lineHeightFactor: 1.2,
     },
   );
 
-  cursorY += displayedPersonality.length * 0.16 + 0.11;
+  cursorY +=
+    Math.min(
+      personalityLines.length,
+      4,
+    ) *
+      0.17 +
+    0.11;
 
-  doc.setDrawColor(RULE_RGB.r, RULE_RGB.g, RULE_RGB.b);
+  doc.setDrawColor(
+    RULE_RGB.r,
+    RULE_RGB.g,
+    RULE_RGB.b,
+  );
+
   doc.line(
     contentX,
     cursorY,
@@ -312,7 +525,7 @@ function drawTextCard(
     cursorY,
   );
 
-  cursorY += 0.18;
+  cursorY += 0.19;
 
   drawSectionLabel(
     doc,
@@ -321,39 +534,51 @@ function drawTextCard(
     cursorY,
   );
 
-  cursorY += 0.16;
+  cursorY += 0.18;
 
   setInk(doc);
+
   doc.setFont("times", "italic");
-  doc.setFontSize(8.2);
+  doc.setFontSize(9);
 
-  const cueText = `"${npc.roleplayingCue}"`;
+  const cueLines =
+    doc.splitTextToSize(
+      `"${npc.roleplayingCue}"`,
+      contentWidth,
+    ) as string[];
 
-  const cueLines = doc.splitTextToSize(
-    cueText,
-    contentWidth,
-  ) as string[];
+  const availableHeight =
+    innerY +
+    innerHeight -
+    0.14 -
+    cursorY;
 
   const maximumCueLines = Math.max(
     1,
     Math.floor(
-      (innerY + innerHeight - 0.16 - cursorY) / 0.16,
+      availableHeight / 0.18,
     ),
   );
 
-  const displayedCue = cueLines.slice(
-    0,
-    maximumCueLines,
-  );
-
-  if (cueLines.length > maximumCueLines) {
-    const finalIndex = displayedCue.length - 1;
-
-    displayedCue[finalIndex] = truncateText(
-      doc,
-      displayedCue[finalIndex],
-      contentWidth,
+  const displayedCue =
+    cueLines.slice(
+      0,
+      maximumCueLines,
     );
+
+  if (
+    cueLines.length >
+    maximumCueLines
+  ) {
+    const finalIndex =
+      displayedCue.length - 1;
+
+    displayedCue[finalIndex] =
+      truncateText(
+        doc,
+        displayedCue[finalIndex],
+        contentWidth,
+      );
   }
 
   doc.text(
@@ -361,19 +586,29 @@ function drawTextCard(
     contentX,
     cursorY,
     {
-      lineHeightFactor: 1.25,
+      lineHeightFactor: 1.22,
     },
   );
 }
 
-function getImageFormat(imageUrl: string) {
-  if (imageUrl.startsWith("data:image/png")) {
+function getImageFormat(
+  imageUrl: string,
+) {
+  if (
+    imageUrl.startsWith(
+      "data:image/png",
+    )
+  ) {
     return "PNG";
   }
 
   if (
-    imageUrl.startsWith("data:image/jpeg") ||
-    imageUrl.startsWith("data:image/jpg")
+    imageUrl.startsWith(
+      "data:image/jpeg",
+    ) ||
+    imageUrl.startsWith(
+      "data:image/jpg",
+    )
   ) {
     return "JPEG";
   }
@@ -381,37 +616,116 @@ function getImageFormat(imageUrl: string) {
   return "WEBP";
 }
 
-function drawPortraitCard(
-  doc: jsPDF,
-  npc: PrintableNpc,
-  destinationIndex: number,
+async function imageUrlToDataUrl(
+  imageUrl: string,
 ) {
-  if (!npc.portraitUrl) {
+  if (
+    imageUrl.startsWith("data:")
+  ) {
+    return imageUrl;
+  }
+
+  const response = await fetch(
+    imageUrl,
+  );
+
+  if (!response.ok) {
     throw new Error(
-      `Missing portrait for ${npc.name}.`,
+      "One of the portrait images could not be downloaded.",
     );
   }
 
-  const { x, y } = getCardPosition(destinationIndex);
+  const blob = await response.blob();
 
-  const innerX = x + CARD_INSET;
-  const innerY = y + CARD_INSET;
-  const innerWidth = CARD_WIDTH - CARD_INSET * 2;
-  const innerHeight = CARD_HEIGHT - CARD_INSET * 2;
+  return await new Promise<string>(
+    (resolve, reject) => {
+      const reader = new FileReader();
 
-  doc.setFillColor(PAPER_RGB.r, PAPER_RGB.g, PAPER_RGB.b);
-  doc.rect(innerX, innerY, innerWidth, innerHeight, "F");
+      reader.onloadend = () => {
+        if (
+          typeof reader.result ===
+          "string"
+        ) {
+          resolve(reader.result);
+        } else {
+          reject(
+            new Error(
+              "A portrait image could not be prepared for printing.",
+            ),
+          );
+        }
+      };
+
+      reader.onerror = () => {
+        reject(
+          new Error(
+            "A portrait image could not be prepared for printing.",
+          ),
+        );
+      };
+
+      reader.readAsDataURL(blob);
+    },
+  );
+}
+
+function drawPortraitCard(
+  doc: jsPDF,
+  npc: PrintableNpc,
+  index: number,
+  portraitDataUrl: string,
+) {
+  const { x, y } = getCellPosition(
+    index,
+    0,
+  );
+
+  const innerInset = 0.08;
+
+  const innerX = x + innerInset;
+  const innerY = y + innerInset;
+
+  const innerWidth =
+    CELL_WIDTH - innerInset * 2;
+
+  const innerHeight =
+    CELL_HEIGHT - innerInset * 2;
+
+  doc.setFillColor(
+    PAPER_RGB.r,
+    PAPER_RGB.g,
+    PAPER_RGB.b,
+  );
+
+  doc.rect(
+    innerX,
+    innerY,
+    innerWidth,
+    innerHeight,
+    "F",
+  );
 
   const frameInset = 0.055;
 
-  const imageX = innerX + frameInset;
-  const imageY = innerY + frameInset;
-  const imageWidth = innerWidth - frameInset * 2;
-  const imageHeight = innerHeight - frameInset * 2;
+  const imageX =
+    innerX + frameInset;
+
+  const imageY =
+    innerY + frameInset;
+
+  const imageWidth =
+    innerWidth -
+    frameInset * 2;
+
+  const imageHeight =
+    innerHeight -
+    frameInset * 2;
 
   doc.addImage(
-    npc.portraitUrl,
-    getImageFormat(npc.portraitUrl),
+    portraitDataUrl,
+    getImageFormat(
+      portraitDataUrl,
+    ),
     imageX,
     imageY,
     imageWidth,
@@ -420,8 +734,14 @@ function drawPortraitCard(
     "FAST",
   );
 
-  doc.setDrawColor(GOLD_RGB.r, GOLD_RGB.g, GOLD_RGB.b);
+  doc.setDrawColor(
+    GOLD_RGB.r,
+    GOLD_RGB.g,
+    GOLD_RGB.b,
+  );
+
   doc.setLineWidth(0.025);
+
   doc.rect(
     innerX,
     innerY,
@@ -429,34 +749,78 @@ function drawPortraitCard(
     innerHeight,
   );
 
-  doc.setDrawColor(PAPER_RGB.r, PAPER_RGB.g, PAPER_RGB.b);
-  doc.setLineWidth(0.035);
-  doc.rect(
-    imageX,
-    imageY,
-    imageWidth,
-    imageHeight,
+  drawNumberBadge(
+    doc,
+    index + 1,
+    innerX + 0.17,
+    innerY + 0.18,
+  );
+
+  doc.setFillColor(
+    PAPER_RGB.r,
+    PAPER_RGB.g,
+    PAPER_RGB.b,
+  );
+
+  doc.roundedRect(
+    innerX + 0.36,
+    innerY +
+      innerHeight -
+      0.34,
+    innerWidth - 0.72,
+    0.24,
+    0.04,
+    0.04,
+    "F",
+  );
+
+  setInk(doc);
+
+  doc.setFont("times", "bold");
+  doc.setFontSize(8.5);
+
+  doc.text(
+    truncateText(
+      doc,
+      npc.name,
+      innerWidth - 0.82,
+    ),
+    innerX +
+      innerWidth / 2,
+    innerY +
+      innerHeight -
+      0.18,
+    {
+      align: "center",
+    },
   );
 }
 
-function validatePrintableCast(npcs: PrintableNpc[]) {
-  if (npcs.length !== 9) {
+function validatePrintableCast(
+  npcs: PrintableNpc[],
+) {
+  if (npcs.length !== 4) {
     throw new Error(
-      "The printable cast requires exactly nine NPCs.",
+      "The printable cast requires exactly four NPCs.",
     );
   }
 
-  const unhiredNpc = npcs.find((npc) => !npc.hired);
+  const unhiredNpc =
+    npcs.find(
+      (npc) => !npc.hired,
+    );
 
   if (unhiredNpc) {
     throw new Error(
-      "All nine NPCs must be hired before downloading the cast.",
+      "All four NPCs must be hired before downloading the cast.",
     );
   }
 
-  const npcWithoutPortrait = npcs.find(
-    (npc) => !npc.portraitUrl,
-  );
+  const npcWithoutPortrait =
+    npcs.find(
+      (npc) =>
+        !npc.portraitUrl,
+    );
 
   if (npcWithoutPortrait) {
     throw new Error(
@@ -465,57 +829,75 @@ function validatePrintableCast(npcs: PrintableNpc[]) {
   }
 }
 
-export function generatePrintableCast(
+export async function generatePrintableCast(
   npcs: PrintableNpc[],
 ) {
   validatePrintableCast(npcs);
 
+  const portraitDataUrls =
+    await Promise.all(
+      npcs.map((npc) =>
+        imageUrlToDataUrl(
+          npc.portraitUrl!,
+        ),
+      ),
+    );
+
   const doc = new jsPDF({
-    orientation: "portrait",
+    orientation: "landscape",
     unit: "in",
     format: "letter",
     compress: true,
   });
 
   doc.setProperties({
-    title: "NPC Recruiter Printable Cast",
+    title:
+      "NPC Recruiter Printable Cast",
+
     subject:
-      "Nine double-sided printable NPC cards",
-    author: "NPC Recruiter",
-    creator: "NPC Recruiter",
+      "Four-person printable NPC cast",
+
+    author:
+      "NPC Recruiter",
+
+    creator:
+      "NPC Recruiter",
   });
 
   drawPageBackground(doc);
 
-  npcs.forEach((npc, index) => {
-    drawTextCard(doc, npc, index);
-  });
+  drawHalfHeading(
+    doc,
+    "Portraits",
+    HALF_WIDTH / 2,
+  );
 
-  drawCutGuides(doc);
+  drawHalfHeading(
+    doc,
+    "NPC Cast",
+    FOLD_X + HALF_WIDTH / 2,
+  );
 
-  doc.addPage("letter", "portrait");
-
-  drawPageBackground(doc);
-
-  for (let row = 0; row < ROWS; row += 1) {
-    for (let column = 0; column < COLUMNS; column += 1) {
-      const frontIndex = row * COLUMNS + column;
-
-      const mirroredColumn =
-        COLUMNS - 1 - column;
-
-      const backDestinationIndex =
-        row * COLUMNS + mirroredColumn;
-
+  npcs.forEach(
+    (npc, index) => {
       drawPortraitCard(
         doc,
-        npcs[frontIndex],
-        backDestinationIndex,
+        npc,
+        index,
+        portraitDataUrls[index],
       );
-    }
-  }
 
-  drawCutGuides(doc);
+      drawTextCard(
+        doc,
+        npc,
+        index,
+      );
+    },
+  );
 
-  doc.save("npc-recruiter-cast.pdf");
+  drawFoldGuide(doc);
+
+  doc.save(
+    "npc-recruiter-cast.pdf",
+  );
 }

@@ -185,6 +185,7 @@ const [authChecked, setAuthChecked] = useState(false);
 
 const [guildTokens, setGuildTokens] = useState(0);
 const [guildLedger, setGuildLedger] = useState<
+
   {
     amount: number;
     transaction_type: string;
@@ -192,6 +193,9 @@ const [guildLedger, setGuildLedger] = useState<
     created_at: string;
   }[]
 >([]);
+
+const [isGuildLedgerOpen, setIsGuildLedgerOpen] =
+  useState(false);
 
 const [isTreasuryOpen, setIsTreasuryOpen] =
   useState(false);
@@ -760,9 +764,11 @@ const unwantedPortraitCount = npcs.filter(
   }
 }
 
-function downloadPrintableCast() {
+async function downloadPrintableCast() {
   try {
-    generatePrintableCast(npcs);
+    setErrorMessage("");
+
+    await generatePrintableCast(npcs);
   } catch (error) {
     setErrorMessage(
       error instanceof Error
@@ -881,8 +887,14 @@ async function startTokenCheckout(
   Buy Guild Tokens
 </button>
 {guildLedger.length > 0 && (
-  <div className="mt-3 rounded-sm border border-[#8d6b2c] bg-[#19140f] p-3">
-    <div className="mb-2 flex items-center gap-2">
+  <div className="mt-3 rounded-sm border border-[#8d6b2c] bg-[#19140f]">
+    <button
+      type="button"
+      onClick={() =>
+        setIsGuildLedgerOpen((current) => !current)
+      }
+      className="flex w-full items-center gap-2 p-3 text-left"
+    >
       <span className="text-[10px] text-[#c59b47]">
         ✦
       </span>
@@ -892,39 +904,45 @@ async function startTokenCheckout(
       </p>
 
       <div className="h-px flex-1 bg-[#745a2c]" />
-    </div>
 
-    <div className="space-y-1.5">
-      {guildLedger.slice(0, 5).map((transaction) => (
-        <div
-          key={`${transaction.created_at}-${transaction.description}`}
-          className="flex items-start justify-between gap-3 border-b border-[#4f3c22] pb-1.5 last:border-b-0 last:pb-0"
-        >
-          <div>
-            <p className="text-[10px] text-[#ead7a9]">
-              {transaction.description}
-            </p>
+      <span className="text-[11px] text-[#c59b47]">
+        {isGuildLedgerOpen ? "▲" : "▼"}
+      </span>
+    </button>
 
-            <p className="mt-0.5 text-[9px] text-[#8f8067]">
-              {new Date(
-                transaction.created_at,
-              ).toLocaleDateString()}
+    {isGuildLedgerOpen && (
+      <div className="space-y-1.5 border-t border-[#4f3c22] px-3 pb-3 pt-2">
+        {guildLedger.slice(0, 5).map((transaction) => (
+          <div
+            key={`${transaction.created_at}-${transaction.description}`}
+            className="flex items-start justify-between gap-3 border-b border-[#4f3c22] pb-1.5 last:border-b-0 last:pb-0"
+          >
+            <div>
+              <p className="text-[10px] text-[#ead7a9]">
+                {transaction.description}
+              </p>
+
+              <p className="mt-0.5 text-[9px] text-[#8f8067]">
+                {new Date(
+                  transaction.created_at,
+                ).toLocaleDateString()}
+              </p>
+            </div>
+
+            <p
+              className={
+                transaction.amount > 0
+                  ? "shrink-0 font-serif text-sm font-bold text-[#8fc18f]"
+                  : "shrink-0 font-serif text-sm font-bold text-[#d78b78]"
+              }
+            >
+              {transaction.amount > 0 ? "+" : ""}
+              {transaction.amount}
             </p>
           </div>
-
-          <p
-            className={
-              transaction.amount > 0
-                ? "shrink-0 font-serif text-sm font-bold text-[#8fc18f]"
-                : "shrink-0 font-serif text-sm font-bold text-[#d78b78]"
-            }
-          >
-            {transaction.amount > 0 ? "+" : ""}
-            {transaction.amount}
-          </p>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    )}
   </div>
 )}
                   <div className="grid grid-cols-2 gap-2">
@@ -1108,7 +1126,7 @@ async function startTokenCheckout(
                 Download Printable Cast
               </button>
               <p className="mt-2 text-center font-serif text-[11px] italic text-[#bba77c]">
-                Downloads the two-page duplex PDF when all portraits are ready.
+                Downloads a single-page foldable PDF when all portraits are ready.
               </p>
             </LedgerSection>
 

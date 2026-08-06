@@ -1071,7 +1071,7 @@ async function startTokenCheckout(
                 <button
                   type="button"
                   onClick={saveCast}
-                  disabled={npcs.length !== 9 || isSavingCast}
+                  disabled={npcs.length !== 4 || isSavingCast}
                   className="w-full rounded-sm border border-[#a98035] bg-[#19140f] px-4 py-3 text-xs font-bold uppercase tracking-[0.08em] text-[#ead7a9] transition hover:bg-[#2c2116] disabled:cursor-not-allowed disabled:border-[#594b39] disabled:text-[#756a58]"
                 >
                   {isSavingCast
@@ -1099,10 +1099,10 @@ async function startTokenCheckout(
                 type="button"
                 onClick={downloadPrintableCast}
                 disabled={
-                  npcs.length !== 9 ||
-                  hiredCount !== 9 ||
-                  npcs.some((npc) => !npc.portraitUrl)
-                }
+  npcs.length !== 4 ||
+  hiredCount !== 4 ||
+  npcs.some((npc) => !npc.portraitUrl)
+}
                 className="w-full rounded-sm border border-[#a98035] bg-[#19140f] px-4 py-3 text-xs font-bold uppercase tracking-[0.08em] text-[#ead7a9] transition hover:bg-[#2c2116] disabled:cursor-not-allowed disabled:border-[#594b39] disabled:text-[#756a58]"
               >
                 Download Printable Cast
@@ -1122,7 +1122,7 @@ async function startTokenCheckout(
 
         <section className="flex min-h-0 flex-col overflow-hidden rounded-[18px] border border-[#9e834e] bg-[#f3e5c8] shadow-[4px_5px_0_rgba(72,55,28,0.18)]">
           <CreamHeading
-            title={npcs.length > 0 && hiredCount === 9 ? "Hired Personnel" : "Candidate Roster"}
+            title={npcs.length > 0 && hiredCount === 4 ? "Hired Personnel" : "Candidate Roster"}
             subtitle={npcs.length > 0 ? `${hiredCount} of ${npcs.length} candidates hired` : "Review your candidates. Hire the best."}
           />
 
@@ -1133,7 +1133,7 @@ async function startTokenCheckout(
     </p>
 
     <div className="flex h-[34px] items-center justify-center border border-[#a9946d] bg-[#fff9ec] px-3 text-center font-serif text-[11px] italic text-[#625744]">
-      Generates nine text NPCs. Text recruitment is free.
+      Generates four text NPCs. Text recruitment is free.
     </div>
   </div>
 
@@ -1174,7 +1174,7 @@ async function startTokenCheckout(
       type="button"
       onClick={replaceUnhiredNpcs}
       disabled={
-        npcs.length !== 9 ||
+        npcs.length !== 4 ||
         replacementCount === 0 ||
         isRecruiting
       }
@@ -1182,9 +1182,9 @@ async function startTokenCheckout(
     >
       {isRecruiting
         ? "Finding Replacements..."
-        : replacementCount === 0 && npcs.length === 9
+        : replacementCount === 0 && npcs.length === 4
           ? "All Candidates Hired"
-          : npcs.length === 9
+          : npcs.length === 4
             ? `Replace ${replacementCount} Unwanted ${
                 replacementCount === 1 ? "Candidate" : "Candidates"
               }`
@@ -1242,7 +1242,7 @@ async function startTokenCheckout(
   type="button"
   onClick={generatePortraits}
   disabled={
-    hiredCount !== 9 ||
+    hiredCount !== 4 ||
     guildTokens < 5 ||
     isGeneratingPortraits
   }
@@ -1250,9 +1250,9 @@ async function startTokenCheckout(
             >
               {isGeneratingPortraits
   ? "The Artists Are Painting..."
-  : hiredCount !== 9
-    ? `Hire ${9 - hiredCount} More ${
-        9 - hiredCount === 1
+  : hiredCount !== 4
+    ? `Hire ${4 - hiredCount} More ${
+        4 - hiredCount === 1
           ? "Candidate"
           : "Candidates"
       } — 5 Guild Tokens`

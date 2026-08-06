@@ -736,7 +736,32 @@ const { data: newBalance, error: spendError } =
 
     chargedUserId = user.id;
 
-    const portraits = await Promise.all(
+const {
+  data: activeCast,
+  error: activeCastError,
+} = await supabaseAdmin
+  .from("casts")
+  .select("id, npcs")
+  .eq("user_id", user.id)
+  .eq("is_active", true)
+  .maybeSingle();
+
+if (activeCastError) {
+  throw new Error(
+    "The active cast could not be loaded before portrait generation.",
+  );
+}
+
+if (
+  !activeCast ||
+  !Array.isArray(activeCast.npcs)
+) {
+  throw new Error(
+    "No active cast was found for this portrait commission.",
+  );
+}
+
+const portraits = await Promise.all(
       body.npcs.map(
         async (
           npc,
@@ -806,7 +831,61 @@ return {
   }ms`,
 );
 
-    return NextResponse.json({
+const portraitMap = new Map(
+  portraits.map((portrait) => [
+    portrait.name,
+    portrait.imageUrl,
+  ]),
+);
+
+const updatedNpcs = activeCast.npcs.map(
+  (npc: {
+    name?: string;
+    portraitUrl?: string;
+    portraitApproved?: boolean;
+    [key: string]: unknown;
+  }) => {
+    const portraitUrl =
+      typeof npc.name === "string"
+        ? portraitMap.get(npc.name)
+        : undefined;
+
+    if (!portraitUrl) {
+      return npc;
+    }
+
+    return {
+      ...npc,
+      portraitUrl,
+      portraitApproved: false,
+    };
+  },
+);
+
+const portraitsComplete = updatedNpcs.every(
+  (npc: { portraitUrl?: string }) =>
+    typeof npc.portraitUrl === "string" &&
+    npc.portraitUrl.length > 0,
+);
+
+const { error: activeCastUpdateError } =
+  await supabaseAdmin
+    .from("casts")
+    .update({
+      npcs: updatedNpcs,
+      portrait_style: body.style.trim(),
+      portraits_complete: portraitsComplete,
+    })
+    .eq("id", activeCast.id)
+    .eq("user_id", user.id);
+
+if (activeCastUpdateError) {
+  throw new Error(
+    "The portraits were created but could not be secured in the active cast.",
+  );
+}
+
+return NextResponse.json({
       portraits,
       balance:
         typeof newBalance === "number"

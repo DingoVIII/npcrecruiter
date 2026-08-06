@@ -131,11 +131,11 @@ export default async function SavedCastPage({
               </h2>
 
               <p className="mt-1 font-serif text-xs italic text-[#625744]">
-                Nine archived NPC text cards.
+                Four archived NPC text cards.
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 p-4">
+            <div className="grid grid-cols-2 gap-4 p-4">
               {npcs.map((npc, index) => (
                 <article
                   key={`${npc.name}-${index}`}
@@ -212,37 +212,37 @@ export default async function SavedCastPage({
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 p-4">
-              {Array.from({ length: 9 }, (_, index) => {
-                const npc = npcs[index];
+            <div className="grid grid-cols-2 gap-4 p-4">
+  {Array.from({ length: 4 }, (_, index) => {
+    const npc = npcs[index];
 
-                return (
-                  <div
-                    key={index}
-                    className="relative aspect-[20/23] overflow-hidden border border-[#8f713b] bg-[#e9ddc5] p-[7px] shadow-[2px_3px_0_rgba(72,55,28,0.12)]"
-                  >
-                    <span className="pointer-events-none absolute inset-[3px] z-20 border border-[#c7a86c]" />
-                    <span className="pointer-events-none absolute inset-[6px] z-20 border border-[#6f5733]/55" />
+    return (
+      <div
+        key={index}
+        className="relative aspect-[20/23] overflow-hidden border border-[#8f713b] bg-[#e9ddc5] p-[7px] shadow-[2px_3px_0_rgba(72,55,28,0.12)]"
+      >
+        <span className="pointer-events-none absolute inset-[3px] z-20 border border-[#c7a86c]" />
+        <span className="pointer-events-none absolute inset-[6px] z-20 border border-[#6f5733]/55" />
 
-                    <span className="absolute left-2 top-2 z-30 flex h-7 w-7 items-center justify-center rounded-full bg-[#292720] font-serif text-sm font-bold text-white">
-                      {index + 1}
-                    </span>
+        <span className="absolute left-2 top-2 z-30 flex h-7 w-7 items-center justify-center rounded-full bg-[#292720] font-serif text-sm font-bold text-white">
+          {index + 1}
+        </span>
 
-                    {npc?.portraitUrl ? (
-                      <img
-                        src={npc.portraitUrl}
-                        alt={`Portrait of ${npc.name}`}
-                        className="h-full w-full object-cover object-top"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center border border-dashed border-[#b7a98d] bg-[#f8f0df] text-[10px] font-bold uppercase tracking-wide text-[#776a55]">
-                        No Portrait
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+        {npc?.portraitUrl ? (
+          <img
+            src={npc.portraitUrl}
+            alt={`Portrait of ${npc.name}`}
+            className="h-full w-full object-cover object-top"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center border border-dashed border-[#b7a98d] bg-[#f8f0df] text-[10px] font-bold uppercase tracking-wide text-[#776a55]">
+            No Portrait
+          </div>
+        )}
+      </div>
+    );
+  })}
+</div>
           </section>
         </div>
 

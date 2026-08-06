@@ -432,31 +432,43 @@ function drawTextCard(
 
   setInk(doc);
 
-  doc.setFont("times", "bold");
-  doc.setFontSize(9.5);
+  doc.setFont("helvetica", "bold");
+doc.setFontSize(8.2);
 
-  const occupationLines =
-    doc.splitTextToSize(
-      npc.occupation,
+const occupationLines =
+  doc.splitTextToSize(
+    npc.occupation,
+    contentWidth,
+  ) as string[];
+
+const displayedOccupation =
+  occupationLines.slice(0, 2);
+
+if (occupationLines.length > 2) {
+  const finalIndex =
+    displayedOccupation.length - 1;
+
+  displayedOccupation[finalIndex] =
+    truncateText(
+      doc,
+      displayedOccupation[finalIndex],
       contentWidth,
-    ) as string[];
+    );
+}
 
-  doc.text(
-    occupationLines.slice(0, 2),
-    contentX,
-    cursorY,
-    {
-      lineHeightFactor: 1.15,
-    },
-  );
+doc.text(
+  displayedOccupation,
+  contentX,
+  cursorY,
+  {
+    lineHeightFactor: 1.15,
+  },
+);
 
   cursorY +=
-    Math.min(
-      occupationLines.length,
-      2,
-    ) *
-      0.17 +
-    0.1;
+  displayedOccupation.length *
+    0.15 +
+  0.1;
 
   doc.setDrawColor(
     RULE_RGB.r,

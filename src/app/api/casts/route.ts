@@ -58,10 +58,10 @@ export async function POST(request: Request) {
 
     if (
       !Array.isArray(body.npcs) ||
-      body.npcs.length !== 9
+      body.npcs.length !== 4
     ) {
       return NextResponse.json(
-        { error: "A saved cast must contain exactly nine NPCs." },
+        { error: "A saved cast must contain exactly four NPCs." },
         { status: 400 },
       );
     }

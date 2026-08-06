@@ -1,5 +1,8 @@
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { start } from "workflow/api";
+
+import { processPortraitJob } from "@/app/workflows/processPortraitJob";
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -346,21 +349,49 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError) {
-      throw new Error(
-        `The portrait job could not be created: ${insertError.message}`,
-      );
-    }
+  throw new Error(
+    `The portrait job could not be created: ${insertError.message}`,
+  );
+}
 
-    return NextResponse.json({
-      job,
-      balance:
-  typeof availableBalance === "number"
-    ? availableBalance
-    : null,
-      resumed: false,
-      message:
-        "Portrait commission created.",
-    });
+try {
+  await start(processPortraitJob, [job.id]);
+} catch (workflowError) {
+  const { error: jobUpdateError } =
+    await supabaseAdmin
+      .from("portrait_jobs")
+      .update({
+        status: "failed",
+        error_message:
+          workflowError instanceof Error
+            ? workflowError.message
+            : "The portrait workflow could not be started.",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", job.id)
+      .eq("status", "queued");
+
+  if (jobUpdateError) {
+    console.error(
+      "Failed portrait job status could not be saved:",
+      jobUpdateError,
+    );
+  }
+
+  throw workflowError;
+}
+
+return NextResponse.json({
+  jobId: job.id,
+  job,
+  balance:
+    typeof availableBalance === "number"
+      ? availableBalance
+      : null,
+  resumed: false,
+  message:
+    "Portrait commission created.",
+});
   } catch (error) {
     console.error(
       "Portrait job POST failed:",

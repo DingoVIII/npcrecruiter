@@ -176,7 +176,9 @@ export default function Home() {
   const [npcs, setNpcs] = useState<Npc[]>([]);
   const [isRecruiting, setIsRecruiting] = useState(false);
   const [isGeneratingPortraits, setIsGeneratingPortraits] =
-  useState(false);
+    useState(false);
+    const [portraitJobId, setPortraitJobId] =
+  useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSavingCast, setIsSavingCast] = useState(false);
 const [saveMessage, setSaveMessage] = useState("");
@@ -288,6 +290,30 @@ try {
 } catch (error) {
   console.error(
     "Active cast could not be restored:",
+    error,
+  );
+}
+try {
+  const response = await fetch(
+    "/api/portraits/jobs",
+  );
+
+  if (response.ok) {
+    const result = (await response.json()) as {
+      job?: {
+        id: string;
+        status: "queued" | "generating";
+      } | null;
+    };
+
+    if (result.job) {
+      setPortraitJobId(result.job.id);
+      setIsGeneratingPortraits(true);
+    }
+  }
+} catch (error) {
+  console.error(
+    "Active portrait commission could not be restored:",
     error,
   );
 }
@@ -465,10 +491,7 @@ function updateNpc(index: number, updatedNpc: Npc) {
     });
 
     const result = (await response.json()) as {
-  portraits?: {
-    name: string;
-    imageUrl: string;
-  }[];
+  jobId?: string;
   balance?: number;
   error?: string;
 };
@@ -483,35 +506,21 @@ if (!response.ok) {
   );
 }
 
-    if (!Array.isArray(result.portraits)) {
-      throw new Error("No portraits were returned.");
-    }
+    if (!result.jobId) {
+  throw new Error("No portrait job was created.");
+}
 
-    const portraitMap = new Map(
-      result.portraits.map((portrait) => [
-        portrait.name,
-        portrait.imageUrl,
-      ]),
-    );
-
-    setNpcs((current) =>
-  current.map((npc) => ({
-    ...npc,
-    portraitUrl:
-      portraitMap.get(npc.name) ?? npc.portraitUrl,
-    portraitApproved: false,
-  })),
-);
-  } catch (error) {
+setPortraitJobId(result.jobId);
+    } catch (error) {
     console.error("Portrait generation failed:", error);
+
+    setIsGeneratingPortraits(false);
 
     setErrorMessage(
       error instanceof Error
         ? error.message
         : "Portrait generation failed.",
     );
-  } finally {
-    setIsGeneratingPortraits(false);
   }
 }
 
@@ -534,7 +543,7 @@ async function replaceUnwantedPortraits() {
   setErrorMessage("");
 
   try {
-    const response = await fetch("/api/portraits", {
+    const response = await fetch("/api/portraits/jobs", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -799,6 +808,102 @@ const unwantedPortraitCount = npcs.filter(
     setIsSavingCast(false);
   }
 }
+useEffect(() => {
+  if (!portraitJobId) {
+    return;
+  }
+
+  const pollPortraitJob = async () => {
+    try {
+      const response = await fetch(
+        `/api/portraits/jobs/${portraitJobId}`,
+      );
+
+      const result = (await response.json()) as {
+        status?: "queued" | "generating" | "completed" | "failed";
+        completed_portraits?: {
+          name: string;
+          imageUrl: string;
+        }[];
+        error_message?: string | null;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(
+          result.error ??
+            "The portrait commission could not be checked.",
+        );
+      }
+
+      if (
+        result.status === "queued" ||
+        result.status === "generating"
+      ) {
+        return;
+      }
+
+      if (result.status === "failed") {
+        setPortraitJobId(null);
+        setIsGeneratingPortraits(false);
+
+        throw new Error(
+          result.error_message ??
+            "The portrait commission failed.",
+        );
+      }
+
+      if (
+        result.status === "completed" &&
+        Array.isArray(result.completed_portraits)
+      ) {
+        const portraitMap = new Map(
+          result.completed_portraits.map((portrait) => [
+            portrait.name,
+            portrait.imageUrl,
+          ]),
+        );
+
+        setNpcs((current) =>
+          current.map((npc) => ({
+            ...npc,
+            portraitUrl:
+              portraitMap.get(npc.name) ??
+              npc.portraitUrl,
+            portraitApproved: false,
+          })),
+        );
+
+        setPortraitJobId(null);
+        setIsGeneratingPortraits(false);
+      }
+    } catch (error) {
+      console.error(
+        "Portrait job polling failed:",
+        error,
+      );
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "The portrait commission could not be checked.",
+      );
+    }
+  };
+
+  void pollPortraitJob();
+
+  const intervalId = window.setInterval(
+    () => {
+      void pollPortraitJob();
+    },
+    3000,
+  );
+
+  return () => {
+    window.clearInterval(intervalId);
+  };
+}, [portraitJobId]);
 
 useEffect(() => {
   if (!guildName) {

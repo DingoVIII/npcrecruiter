@@ -3,6 +3,7 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import { uploadPortrait } from "@/lib/storage/uploadPortrait";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -631,6 +632,7 @@ export async function POST(request: Request) {
   let chargedUserId: string | null = null;
   let tokenCost = 0;
   let isReroll = false;
+  const batchStartedAt = Date.now();
 
   try {
     const supabase = await createClient();
@@ -739,8 +741,14 @@ const { data: newBalance, error: spendError } =
         async (
           npc,
         ): Promise<GeneratedPortrait> => {
-          const result =
-            await openai.images.generate({
+          const portraitStartedAt = Date.now();
+
+console.log(
+  `[Portrait] Starting OpenAI generation for ${npc.name}`,
+);
+
+const result =
+  await openai.images.generate({
               model: "gpt-image-2",
               prompt: buildPortraitPrompt(
                 npc,
@@ -752,6 +760,12 @@ const { data: newBalance, error: spendError } =
               output_compression: 80,
             });
 
+            console.log(
+  `[Portrait] OpenAI finished for ${npc.name} in ${
+    Date.now() - portraitStartedAt
+  }ms`,
+);
+
           const imageBase64 =
             result.data?.[0]?.b64_json;
 
@@ -761,14 +775,37 @@ const { data: newBalance, error: spendError } =
             );
           }
 
-          return {
-            name: npc.name,
-            imageUrl:
-              `data:image/webp;base64,${imageBase64}`,
-          };
+          const uploadStartedAt = Date.now();
+
+console.log(
+  `[Portrait] Starting Supabase upload for ${npc.name}`,
+);
+
+const imageUrl = await uploadPortrait(
+  imageBase64,
+  npc.name,
+);
+
+console.log(
+  `[Portrait] Supabase upload finished for ${npc.name} in ${
+    Date.now() - uploadStartedAt
+  }ms`,
+);
+
+return {
+  name: npc.name,
+  imageUrl,
+};
         },
       ),
     );
+
+
+    console.log(
+  `[Portrait Batch] Completed ${portraits.length} portraits in ${
+    Date.now() - batchStartedAt
+  }ms`,
+);
 
     return NextResponse.json({
       portraits,

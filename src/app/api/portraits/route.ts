@@ -657,8 +657,8 @@ export async function POST(request: Request) {
 isReroll = body.reroll === true;
 
 const validNpcCount = isReroll
-  ? body.npcs.length >= 1 && body.npcs.length <= 9
-  : body.npcs.length === 9;
+  ? body.npcs.length >= 1 && body.npcs.length <= 4
+  : body.npcs.length === 4;
 
 if (
   !Array.isArray(body.npcs) ||
@@ -668,8 +668,8 @@ if (
   return NextResponse.json(
     {
       error: isReroll
-        ? "Between one and nine portraits may be recommissioned."
-        : "Nine hired NPCs and one portrait style are required.",
+  ? "Between one and four portraits may be recommissioned."
+  : "Four hired NPCs and one portrait style are required.",
     },
     { status: 400 },
   );
@@ -703,7 +703,7 @@ const transactionDescription = isReroll
   ? `Recommissioned ${tokenCost} portrait${
       tokenCost === 1 ? "" : "s"
     }`
-  : "Commissioned a nine-portrait NPC cast";
+  : "Commissioned a four-portrait NPC cast";
 
 const { data: newBalance, error: spendError } =
   await supabaseAdmin.rpc("spend_guild_tokens", {

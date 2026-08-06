@@ -33,18 +33,20 @@ console.log(
   buckets.error,
 );
 
-  const { error } = await supabase.storage
-  .from("npc-Portraits")
+  const { data, error } = await supabase.storage
+  .from("npc-portraits")
   .upload(fileName, buffer, {
     contentType: "image/webp",
     upsert: false,
   });
 
-  if (error) {
-    throw new Error(
-      `Failed to upload portrait: ${error.message}`,
-    );
-  }
+console.log("UPLOAD DATA:", data);
+console.log("UPLOAD ERROR:", error);
+
+if (error) {
+  console.error(error);
+  throw error;
+}
 
   const {
     data: { publicUrl },

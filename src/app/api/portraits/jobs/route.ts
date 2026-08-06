@@ -91,12 +91,16 @@ export async function GET() {
         `,
       )
       .eq("user_id", user.id)
-      .in("status", ["queued", "generating"])
-      .order("created_at", {
-        ascending: false,
-      })
-      .limit(1)
-      .maybeSingle();
+.in("status", [
+  "queued",
+  "generating",
+  "completed",
+])
+.order("created_at", {
+  ascending: false,
+})
+.limit(1)
+.maybeSingle();
 
     if (jobError) {
       console.error(
@@ -113,7 +117,15 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({ job });
+    return NextResponse.json({
+  job:
+    job &&
+    (job.status === "queued" ||
+      job.status === "generating" ||
+      job.status === "completed")
+      ? job
+      : null,
+});
   } catch (error) {
     console.error(
       "Portrait job GET failed:",

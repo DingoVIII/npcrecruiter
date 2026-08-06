@@ -301,15 +301,56 @@ try {
   if (response.ok) {
     const result = (await response.json()) as {
       job?: {
-        id: string;
-        status: "queued" | "generating";
-      } | null;
+  id: string;
+  status:
+    | "queued"
+    | "generating"
+    | "completed";
+  completed_portraits?: {
+    name: string;
+    imageUrl: string;
+  }[];
+} | null;
     };
 
     if (result.job) {
-      setPortraitJobId(result.job.id);
-      setIsGeneratingPortraits(true);
-    }
+  if (
+    result.job.status === "queued" ||
+    result.job.status === "generating"
+  ) {
+    setPortraitJobId(result.job.id);
+    setIsGeneratingPortraits(true);
+  }
+
+  if (
+    result.job.status === "completed" &&
+    Array.isArray(result.job.completed_portraits)
+  ) {
+    const portraitMap = new Map(
+      result.job.completed_portraits.map(
+        (portrait: {
+          name: string;
+          imageUrl: string;
+        }) => [
+          portrait.name,
+          portrait.imageUrl,
+        ],
+      ),
+    );
+
+    setNpcs((current) =>
+      current.map((npc) => ({
+        ...npc,
+        portraitUrl:
+          portraitMap.get(npc.name) ??
+          npc.portraitUrl,
+        portraitApproved: false,
+      })),
+    );
+
+    setIsGeneratingPortraits(false);
+  }
+}
   }
 } catch (error) {
   console.error(

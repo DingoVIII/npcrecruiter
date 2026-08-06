@@ -520,7 +520,7 @@ function updateNpc(index: number, updatedNpc: Npc) {
   setIsGeneratingPortraits(true);
 
   try {
-    const response = await fetch("/api/portraits", {
+    const response = await fetch("/api/portraits/jobs", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

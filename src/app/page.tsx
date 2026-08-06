@@ -269,6 +269,28 @@ if (ledgerResponse.ok) {
 }
   }
 }
+try {
+  const response = await fetch("/api/casts/active");
+
+  if (response.ok) {
+    const result = await response.json();
+
+    if (result.cast) {
+      setLocation(result.cast.location);
+      setInspiration(result.cast.inspiration);
+      setSelectedSpecies(result.cast.species);
+      setPortraitStyle(
+        result.cast.portrait_style ?? "Fantasy",
+      );
+      setNpcs(result.cast.npcs ?? []);
+    }
+  }
+} catch (error) {
+  console.error(
+    "Active cast could not be restored:",
+    error,
+  );
+}
 
 setAuthChecked(true);
   }
@@ -777,6 +799,62 @@ const unwantedPortraitCount = npcs.filter(
     setIsSavingCast(false);
   }
 }
+
+useEffect(() => {
+  if (!guildName) {
+    return;
+  }
+
+  if (npcs.length !== 4) {
+    return;
+  }
+
+  const saveActiveCast = async () => {
+    try {
+      await fetch("/api/casts/active", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: "Current Cast",
+          location:
+            location === "Custom"
+              ? customLocation.trim()
+              : location,
+          inspiration:
+            inspiration === "Custom"
+              ? customInspiration.trim()
+              : inspiration,
+          genderMix:
+            gender === "Custom"
+              ? customGender.trim()
+              : gender,
+          species: getRecruitmentSpecies(),
+          portraitStyle,
+          npcs,
+        }),
+      });
+    } catch (error) {
+      console.error(
+        "Active cast autosave failed:",
+        error,
+      );
+    }
+  };
+
+  void saveActiveCast();
+}, [
+  guildName,
+  npcs,
+  location,
+  customLocation,
+  inspiration,
+  customInspiration,
+  gender,
+  customGender,
+  portraitStyle,
+]);
 
 async function downloadPrintableCast() {
   try {

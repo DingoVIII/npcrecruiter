@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 
-type SavedNpc = {
+type ActiveNpc = {
   name: string;
   gender: string;
   species: string;
@@ -10,18 +10,19 @@ type SavedNpc = {
   personality: string;
   roleplayingCue: string;
   portraitPrompt: string;
-  portraitUrl?: string;
   hired?: boolean;
+  portraitUrl?: string;
+  portraitApproved?: boolean;
 };
 
-type SaveCastRequest = {
-  title: string;
+type SaveActiveCastRequest = {
+  title?: string;
   location: string;
   inspiration: string;
   genderMix: string;
   species: string[];
   portraitStyle?: string;
-  npcs: SavedNpc[];
+  npcs: ActiveNpc[];
 };
 
 export async function GET() {
@@ -77,10 +78,7 @@ export async function GET() {
 
     return NextResponse.json({ cast });
   } catch (error) {
-    console.error(
-      "Active cast route failed:",
-      error,
-    );
+    console.error("Active cast GET failed:", error);
 
     return NextResponse.json(
       {
@@ -96,14 +94,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as SaveCastRequest;
-
-    if (!body.title?.trim()) {
-      return NextResponse.json(
-        { error: "Enter a name for this cast." },
-        { status: 400 },
-      );
-    }
+    const body =
+      (await request.json()) as SaveActiveCastRequest;
 
     if (
       !body.location?.trim() ||
@@ -111,7 +103,10 @@ export async function POST(request: Request) {
       !body.genderMix?.trim()
     ) {
       return NextResponse.json(
-        { error: "The recruitment settings are incomplete." },
+        {
+          error:
+            "The recruitment settings are incomplete.",
+        },
         { status: 400 },
       );
     }
@@ -121,7 +116,10 @@ export async function POST(request: Request) {
       body.species.length === 0
     ) {
       return NextResponse.json(
-        { error: "The cast must include at least one species." },
+        {
+          error:
+            "The cast must include at least one species.",
+        },
         { status: 400 },
       );
     }
@@ -131,7 +129,10 @@ export async function POST(request: Request) {
       body.npcs.length !== 4
     ) {
       return NextResponse.json(
-        { error: "A saved cast must contain exactly four NPCs." },
+        {
+          error:
+            "The active cast must contain exactly four NPCs.",
+        },
         { status: 400 },
       );
     }
@@ -148,7 +149,10 @@ export async function POST(request: Request) {
 
     if (invalidNpc) {
       return NextResponse.json(
-        { error: "One or more NPCs are incomplete." },
+        {
+          error:
+            "One or more NPCs are incomplete.",
+        },
         { status: 400 },
       );
     }
@@ -162,7 +166,10 @@ export async function POST(request: Request) {
 
     if (userError || !user) {
       return NextResponse.json(
-        { error: "Sign in before saving a cast." },
+        {
+          error:
+            "Sign in before creating an active cast.",
+        },
         { status: 401 },
       );
     }
@@ -173,46 +180,115 @@ export async function POST(request: Request) {
         npc.portraitUrl.length > 0,
     );
 
-    const { data: cast, error: saveError } = await supabase
-      .from("casts")
-      .insert({
-        user_id: user.id,
-        title: body.title.trim(),
-        location: body.location.trim(),
-        inspiration: body.inspiration.trim(),
-        gender_mix: body.genderMix.trim(),
-        species: body.species,
-        portrait_style: body.portraitStyle?.trim() || null,
-        npcs: body.npcs,
-        portraits_complete: portraitsComplete,
-      })
-      .select("id, title, portraits_complete")
-      .single();
+    const castValues = {
+      title: body.title?.trim() || "Current Cast",
+      location: body.location.trim(),
+      inspiration: body.inspiration.trim(),
+      gender_mix: body.genderMix.trim(),
+      species: body.species,
+      portrait_style:
+        body.portraitStyle?.trim() || null,
+      npcs: body.npcs,
+      portraits_complete: portraitsComplete,
+      is_active: true,
+    };
 
-    if (saveError) {
-      console.error("Cast save failed:", saveError);
+    const { data: existingCast, error: findError } =
+      await supabase
+        .from("casts")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+    if (findError) {
+      console.error(
+        "Active cast lookup failed:",
+        findError,
+      );
 
       return NextResponse.json(
-        { error: "The Guild Archive could not save this cast." },
+        {
+          error:
+            "The recruiter could not locate the active cast.",
+        },
+        { status: 500 },
+      );
+    }
+
+    if (existingCast) {
+      const { data: cast, error: updateError } =
+        await supabase
+          .from("casts")
+          .update(castValues)
+          .eq("id", existingCast.id)
+          .eq("user_id", user.id)
+          .select(
+            "id, title, portraits_complete, is_active",
+          )
+          .single();
+
+      if (updateError) {
+        console.error(
+          "Active cast update failed:",
+          updateError,
+        );
+
+        return NextResponse.json(
+          {
+            error:
+              "The recruiter could not update the active cast.",
+          },
+          { status: 500 },
+        );
+      }
+
+      return NextResponse.json({
+        cast,
+        message: "Active cast updated.",
+      });
+    }
+
+    const { data: cast, error: insertError } =
+      await supabase
+        .from("casts")
+        .insert({
+          user_id: user.id,
+          ...castValues,
+        })
+        .select(
+          "id, title, portraits_complete, is_active",
+        )
+        .single();
+
+    if (insertError) {
+      console.error(
+        "Active cast creation failed:",
+        insertError,
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "The recruiter could not create the active cast.",
+        },
         { status: 500 },
       );
     }
 
     return NextResponse.json({
       cast,
-      message: portraitsComplete
-        ? "Complete cast saved."
-        : "Text cast saved.",
+      message: "Active cast created.",
     });
   } catch (error) {
-    console.error("Cast save route failed:", error);
+    console.error("Active cast POST failed:", error);
 
     return NextResponse.json(
       {
         error:
           error instanceof Error
             ? error.message
-            : "The Guild Archive could not save this cast.",
+            : "The recruiter could not save the active cast.",
       },
       { status: 500 },
     );

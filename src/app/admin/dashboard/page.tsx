@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 type TrendDirection = "up" | "down" | "neutral";
 
 type Metric = {
@@ -258,6 +262,69 @@ const goals = [
 ];
 
 export default function GuildmasterDashboardPage() {
+  const [memberEmail, setMemberEmail] = useState("");
+  const [grantAmount, setGrantAmount] = useState(20);
+  const [grantReason, setGrantReason] =
+    useState("Alpha Tester");
+  const [grantMessage, setGrantMessage] = useState("");
+  const [grantError, setGrantError] = useState("");
+  const [isGrantingTokens, setIsGrantingTokens] =
+    useState(false);
+
+  async function grantTokens() {
+    if (isGrantingTokens) {
+      return;
+    }
+
+    setIsGrantingTokens(true);
+    setGrantMessage("");
+    setGrantError("");
+
+    try {
+      const response = await fetch(
+        "/api/admin/tokens/grant",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: memberEmail,
+            amount: grantAmount,
+            reason: grantReason,
+          }),
+        },
+      );
+
+      const result = (await response.json()) as {
+        message?: string;
+        error?: string;
+        balance?: number;
+      };
+
+      if (!response.ok) {
+        throw new Error(
+          result.error ??
+            "The Guild Tokens could not be granted.",
+        );
+      }
+
+      setGrantMessage(
+        `${result.message} New balance: ${
+          result.balance ?? "unknown"
+        }.`,
+      );
+    } catch (error) {
+      setGrantError(
+        error instanceof Error
+          ? error.message
+          : "The Guild Tokens could not be granted.",
+      );
+    } finally {
+      setIsGrantingTokens(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#ded3bd] text-[#2b2925]">
       <header className="border-b border-[#9e834e] bg-[#f8f2e5]">
@@ -302,6 +369,98 @@ export default function GuildmasterDashboardPage() {
       </header>
 
       <div className="mx-auto max-w-[1700px] space-y-5 px-4 py-5 sm:px-6">
+        <section>
+  <DashboardPanel
+    eyebrow="Guild administration"
+    title="Grant Guild Tokens"
+  >
+    <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr_1.2fr_auto] xl:items-end">
+      <label className="block">
+        <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.16em] text-[#806d49]">
+          Guild Member Email
+        </span>
+
+        <input
+          type="email"
+          value={memberEmail}
+          onChange={(event) =>
+            setMemberEmail(event.target.value)
+          }
+          placeholder="member@example.com"
+          className="w-full border border-[#ae976c] bg-[#fffdf7] px-3 py-3 text-sm outline-none focus:border-[#7e2518]"
+        />
+      </label>
+
+      <div>
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#806d49]">
+          Token Amount
+        </p>
+
+        <div className="grid grid-cols-4 gap-2">
+          {[20, 50, 100, 500].map((amount) => (
+            <button
+              key={amount}
+              type="button"
+              onClick={() => setGrantAmount(amount)}
+              className={
+                grantAmount === amount
+                  ? "border border-[#2f2c25] bg-[#2f2c25] px-2 py-3 text-xs font-bold text-white"
+                  : "border border-[#ae976c] bg-[#fffdf7] px-2 py-3 text-xs font-bold hover:bg-[#efe4cf]"
+              }
+            >
+              +{amount}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <label className="block">
+        <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.16em] text-[#806d49]">
+          Reason
+        </span>
+
+        <select
+          value={grantReason}
+          onChange={(event) =>
+            setGrantReason(event.target.value)
+          }
+          className="w-full border border-[#ae976c] bg-[#fffdf7] px-3 py-3 text-sm outline-none focus:border-[#7e2518]"
+        >
+          <option>Alpha Tester</option>
+          <option>Compensation</option>
+          <option>Promotion</option>
+          <option>Manual Adjustment</option>
+        </select>
+      </label>
+
+      <button
+        type="button"
+        onClick={grantTokens}
+        disabled={
+          !memberEmail.trim() || isGrantingTokens
+        }
+        className="border border-[#7e2518] bg-[#8f2e1d] px-5 py-3 text-xs font-bold uppercase tracking-[0.1em] text-white transition hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]"
+      >
+        {isGrantingTokens
+          ? "Granting..."
+          : "Grant Tokens"}
+      </button>
+    </div>
+
+    {grantMessage && (
+      <div className="mt-4 border border-[#6d8a70] bg-[#edf4ec] px-4 py-3 text-sm text-[#315138]">
+        {grantMessage}
+      </div>
+    )}
+
+    {grantError && (
+      <div className="mt-4 border border-[#9c5c51] bg-[#f8ece9] px-4 py-3 text-sm text-[#7a342d]">
+        {grantError}
+      </div>
+    )}
+  </DashboardPanel>
+</section>
+
         <section>
           <SectionHeading
             eyebrow="North-star metrics"

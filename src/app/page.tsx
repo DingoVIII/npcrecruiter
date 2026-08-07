@@ -1426,26 +1426,7 @@ async function startTokenCheckout(
         : "Recruit New Candidates"}
     </button>
 
-    <button
-      type="button"
-      onClick={replaceUnhiredNpcs}
-      disabled={
-        npcs.length !== 4 ||
-        replacementCount === 0 ||
-        isRecruiting
-      }
-      className="mt-2 w-full border border-[#a9946d] bg-[#efe1c5] px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-[#5f513d] transition hover:bg-[#e4d3b2] disabled:cursor-not-allowed disabled:text-[#81735f]"
-    >
-      {isRecruiting
-        ? "Finding Replacements..."
-        : replacementCount === 0 && npcs.length === 4
-          ? "All Candidates Hired"
-          : npcs.length === 4
-            ? `Replace ${replacementCount} Unwanted ${
-                replacementCount === 1 ? "Candidate" : "Candidates"
-              }`
-            : "Replace Unwanted Candidates"}
-    </button>
+    
   </div>
 </div>
         </section>
@@ -1492,10 +1473,6 @@ async function startTokenCheckout(
   name={npc?.name}
   ready={Boolean(npc?.hired)}
   portraitUrl={npc?.portraitUrl}
-  approved={Boolean(npc?.portraitApproved)}
-  onToggleApproval={() =>
-    togglePortraitApproval(index)
-  }
 />
                 );
               })}
@@ -1524,40 +1501,7 @@ async function startTokenCheckout(
       : "Generate Portraits — 5 Guild Tokens"}
             </button>
 
-            <button
-  type="button"
-  onClick={replaceUnwantedPortraits}
-  disabled={
-    isGeneratingPortraits ||
-    !portraitsGenerated ||
-    unwantedPortraitCount === 0 ||
-    guildTokens < unwantedPortraitCount
-  }
-  className="mt-2 w-full border border-[#a9946d] bg-[#efe1c5] px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-[#5f513d] transition hover:bg-[#e4d3b2] disabled:cursor-not-allowed disabled:text-[#81735f]"
->
-  {isGeneratingPortraits
-  ? "The Artists Are Repainting..."
-  : !portraitsGenerated
-    ? "Commission Portraits First"
-    : unwantedPortraitCount === 0
-      ? "All Portraits Approved"
-      : guildTokens < unwantedPortraitCount
-        ? `Requires ${unwantedPortraitCount} Guild ${
-            unwantedPortraitCount === 1
-              ? "Token"
-              : "Tokens"
-          }`
-        : `Replace ${unwantedPortraitCount} Unwanted ${
-            unwantedPortraitCount === 1
-              ? "Portrait"
-              : "Portraits"
-          } — ${unwantedPortraitCount} Guild ${
-            unwantedPortraitCount === 1
-              ? "Token"
-              : "Tokens"
-          }`}
-</button>
-          </div>
+            </div>
         </aside>
             </div>
 
@@ -2089,8 +2033,6 @@ type PortraitSlotProps = {
   name?: string;
   ready: boolean;
   portraitUrl?: string;
-  approved: boolean;
-  onToggleApproval: () => void;
 };
 
 function PortraitSlot({
@@ -2098,27 +2040,9 @@ function PortraitSlot({
   name,
   ready,
   portraitUrl,
-  approved,
-  onToggleApproval,
 }: PortraitSlotProps) {
   return (
-    <button
-      type="button"
-      onClick={onToggleApproval}
-      disabled={!portraitUrl}
-      title={
-        portraitUrl
-          ? approved
-            ? "Approved portrait"
-            : "Mark portrait as approved"
-          : name ?? `Portrait slot ${number}`
-      }
-      className={
-        approved
-          ? "relative aspect-[20/23] overflow-hidden border-2 border-[#58705a] bg-[#e9ddc5] p-[7px] text-left shadow-[2px_3px_0_rgba(44,64,46,0.18)]"
-          : "relative aspect-[20/23] overflow-hidden border border-[#8f713b] bg-[#e9ddc5] p-[7px] text-left shadow-[2px_3px_0_rgba(72,55,28,0.12)] disabled:cursor-default"
-      }
-    >
+    <div className="relative aspect-[20/23] overflow-hidden border border-[#8f713b] bg-[#e9ddc5] p-[7px] text-left shadow-[2px_3px_0_rgba(72,55,28,0.12)]">
       <span className="pointer-events-none absolute inset-[3px] z-20 border border-[#c7a86c]" />
       <span className="pointer-events-none absolute inset-[6px] z-20 border border-[#6f5733]/55" />
 
@@ -2131,19 +2055,7 @@ function PortraitSlot({
         {number}
       </span>
 
-      {portraitUrl && (
-        <span
-          className={
-            approved
-              ? "absolute right-2 top-2 z-30 flex h-7 items-center rounded-full border border-[#456149] bg-[#456149] px-2 text-[9px] font-bold uppercase tracking-wide text-white"
-              : "absolute right-2 top-2 z-30 flex h-7 items-center rounded-full border border-[#8d7751] bg-[#fff9ec] px-2 text-[9px] font-bold uppercase tracking-wide text-[#5f513d]"
-          }
-        >
-          {approved ? "Approved" : "Replace"}
-        </span>
-      )}
-
-      {portraitUrl ? (
+            {portraitUrl ? (
         <img
           src={portraitUrl}
           alt={`Portrait of ${name ?? `NPC ${number}`}`}
@@ -2156,7 +2068,7 @@ function PortraitSlot({
           </p>
         </div>
       )}
-    </button>
+    </div>
   );
 }
 type DarkDropdownProps = {

@@ -1590,7 +1590,7 @@ async function startTokenCheckout(
               <TokenPackCard
                 title="🥉 Bronze Chest"
                 tokens={20}
-                price="$7.99 USD"
+                price="$5.99 USD"
                 description="Perfect for a single adventure."
                 disabled={isStartingCheckout}
                 onPurchase={() =>
@@ -1601,7 +1601,7 @@ async function startTokenCheckout(
               <TokenPackCard
                 title="🥈 Iron Strongbox"
                 tokens={75}
-                price="$24.99 USD"
+                price="$19.99 USD"
                 description="Ideal for ongoing campaigns."
                 featured
                 disabled={isStartingCheckout}
@@ -1613,7 +1613,7 @@ async function startTokenCheckout(
               <TokenPackCard
                 title="🥇 Golden Guild Vault"
                 tokens={200}
-                price="$49.99 USD"
+                price="$39.99 USD"
                 description="Best value for worldbuilders and professional GMs."
                 disabled={isStartingCheckout}
                 onPurchase={() =>

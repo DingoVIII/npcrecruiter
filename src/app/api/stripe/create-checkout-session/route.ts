@@ -15,20 +15,20 @@ const stripe = new Stripe(stripeSecretKey);
 
 const tokenPacks = {
   starter: {
-  priceId: "price_1U1EGVCX3nzlgqsdqjhsgDmW",
-  tokens: 20,
-  name: "Bronze Chest",
-},
-adventurer: {
-  priceId: "price_1U1EkQCX3nzlgqsdyQajSfI2",
-  tokens: 75,
-  name: "Iron Strongbox",
-},
-guildmaster: {
-  priceId: "price_1U1EIKCX3nzlgqsd65yoov1k",
-  tokens: 200,
-  name: "Golden Guild Vault",
-},
+    priceId: "price_1U1bcSCX3nzlqgsd9lfljsi3",
+    tokens: 20,
+    name: "Bronze Chest",
+  },
+  adventurer: {
+    priceId: "price_1U1bazCX3nzlqgsdY41XNq11",
+    tokens: 75,
+    name: "Iron Strongbox",
+  },
+  guildmaster: {
+    priceId: "price_1U1ElKCX3nzlqgsd65yoov1k",
+    tokens: 200,
+    name: "Golden Guild Vault",
+  },
 } as const;
 
 type TokenPackKey = keyof typeof tokenPacks;

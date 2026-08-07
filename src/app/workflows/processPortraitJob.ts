@@ -62,12 +62,12 @@ export async function processPortraitJob(
 
   const job = await claimPortraitJob(jobId);
 
-  if (!job) {
-    return {
-      jobId,
-      processed: false,
-    };
-  }
+if (!job) {
+  return {
+    jobId,
+    processed: false,
+  };
+}
 
   try {
     const portraits = await generateJobPortraits(job);
@@ -140,6 +140,21 @@ async function generateJobPortraits(
   job: PortraitJob,
 ): Promise<GeneratedPortrait[]> {
   "use step";
+const supabaseAdmin = createAdminSupabase();
+
+const { data: latestJob } = await supabaseAdmin
+  .from("portrait_jobs")
+  .select("completed_portraits")
+  .eq("id", job.id)
+  .single();
+
+if (
+  latestJob?.completed_portraits &&
+  Array.isArray(latestJob.completed_portraits) &&
+  latestJob.completed_portraits.length > 0
+) {
+  return latestJob.completed_portraits as GeneratedPortrait[];
+}
 
   return generatePortraitBatch(
     job.requested_npcs,

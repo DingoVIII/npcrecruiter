@@ -15,7 +15,12 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "NPC Recruiter",
   description:
-    "Generate memorable tabletop RPG NPCs with printable portraits and character cards.",
+    "Recruit memorable NPCs and commission portraits for your tabletop RPG.",
+  icons: {
+    icon: "/logo/npc-icon.png",
+    shortcut: "/logo/npc-icon.png",
+    apple: "/logo/npc-icon.png",
+  },
 };
 
 export default function RootLayout({

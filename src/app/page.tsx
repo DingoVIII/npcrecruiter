@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { generatePrintableCast } from "@/lib/pdf/printableCast";
 import { createClient } from "@/lib/supabase/client";
 
@@ -1080,9 +1081,15 @@ async function startTokenCheckout(
           <span className="pointer-events-none absolute bottom-1 right-1 z-20 h-5 w-5 rounded-full border border-[#c49a46] bg-[#2a1d10] shadow-[inset_0_0_0_2px_rgba(219,171,72,0.16)]" />
          <div className="relative border-b border-[#8d6b2c] px-5 py-4 [@media(max-height:800px)]:py-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border border-[#c19b4c] bg-[#241b12] text-xl shadow-[inset_0_0_0_2px_rgba(193,155,76,0.12)]">
-                ⚔
-              </div>
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border border-[#c19b4c] bg-[#241b12] p-1 shadow-[inset_0_0_0_2px_rgba(193,155,76,0.12)]">
+  <Image
+    src="/logo/npc-icon.png"
+    alt="NPC Recruiter"
+    width={40}
+    height={40}
+    className="h-10 w-10 object-contain"
+  />
+</div>
               <div>
                 <h1 className="font-serif text-[1.08rem] font-bold uppercase tracking-[0.055em] text-[#f0d58e] 2xl:text-xl">
                   Guild Recruitment Ledger
@@ -1441,31 +1448,33 @@ async function startTokenCheckout(
       Portrait Style
     </p>
 
-    <div className="grid grid-cols-3 gap-2">
-      {portraitStyles.map((style) => (
-        <button
-          key={style}
-          type="button"
-          onClick={() => {
-            setPortraitStyle(style);
+    <div className="mb-3 shrink-0">
+  <div className="grid grid-cols-3 gap-2">
+    {portraitStyles.map((style) => (
+      <button
+        key={style}
+        type="button"
+        onClick={() => {
+          setPortraitStyle(style);
 
-            window.localStorage.setItem(
-              "npc-recruiter-portrait-style",
-              style,
-            );
-          }}
-          className={
-            portraitStyle === style
-              ? "border border-[#292720] bg-[#292720] px-2 py-2 text-[11px] font-bold text-white"
-              : "border border-[#a9946d] bg-[#fff9ec] px-2 py-2 text-[11px] font-bold text-[#352f26] transition hover:bg-[#eee0c2]"
-          }
-        >
-          {style}
-        </button>
-      ))}
-    </div>
+          window.localStorage.setItem(
+            "npc-recruiter-portrait-style",
+            style,
+          );
+        }}
+        className={
+          portraitStyle === style
+            ? "border border-[#292720] bg-[#292720] px-2 py-2 text-[11px] font-bold text-white"
+            : "border border-[#a9946d] bg-[#fff9ec] px-2 py-2 text-[11px] font-bold text-[#352f26] transition hover:bg-[#eee0c2]"
+        }
+      >
+        {style}
+      </button>
+    ))}
+  </div>
+</div>
 
-    <div className="mt-3 min-h-0 flex-1 overflow-y-auto [scrollbar-color:#8d6b2c_#17110c] [scrollbar-width:thin]">
+<div className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:#8d6b2c_#17110c] [scrollbar-width:thin]">
       <div className="grid grid-cols-2 gap-3">
         {Array.from({ length: 4 }, (_, index) => {
           const npc = npcs[index];

@@ -1414,16 +1414,16 @@ async function startTokenCheckout(
     )}
   </div>
 
-  <div className="mt-3 shrink-0">
-    <button
-      type="button"
-      onClick={recruitNpcs}
+  <div className="flex h-24 shrink-0 items-center">
+  <button
+    type="button"
+    onClick={recruitNpcs}
       disabled={!hasSpecies || isRecruiting}
-      className="w-full border border-[#7e2518] bg-[#8f2e1d] px-4 py-3 text-xs font-bold uppercase tracking-[0.1em] text-white transition hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]"
+      className="w-full border border-[#7e2518] bg-[#8f2e1d] px-4 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white transition hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]"
     >
       {isRecruiting
         ? "Interviewing Candidates..."
-        : "Recruit New Candidates"}
+        : "Recruit New Candidates — Free"}
     </button>
 
     
@@ -1477,31 +1477,32 @@ async function startTokenCheckout(
                 );
               })}
             </div>
+</div>
 
-            <button
-  type="button"
-  onClick={generatePortraits}
-  disabled={
-    hiredCount !== 4 ||
-    guildTokens < 5 ||
-    isGeneratingPortraits
-  }
-              className="mt-3 w-full border border-[#7e2518] bg-[#8f2e1d] px-4 py-3 text-xs font-bold uppercase tracking-[0.1em] text-white transition hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]"
-            >
-              {isGeneratingPortraits
-  ? "The Artists Are Painting..."
-  : hiredCount !== 4
-    ? `Hire ${4 - hiredCount} More ${
-        4 - hiredCount === 1
-          ? "Candidate"
-          : "Candidates"
-      } — 5 Guild Tokens`
-    : guildTokens < 5
-      ? "Requires 5 Guild Tokens"
-      : "Generate Portraits — 5 Guild Tokens"}
-            </button>
-
-            </div>
+           <div className="flex h-24 shrink-0 items-center">
+  <button
+    type="button"
+    onClick={generatePortraits}
+    disabled={
+      hiredCount !== 4 ||
+      guildTokens < 5 ||
+      isGeneratingPortraits
+    }
+    className="w-full border border-[#7e2518] bg-[#8f2e1d] px-4 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white transition hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]"
+  >
+    {isGeneratingPortraits
+      ? "The Artists Are Painting..."
+      : hiredCount !== 4
+        ? `Hire ${4 - hiredCount} More ${
+            4 - hiredCount === 1
+              ? "Candidate"
+              : "Candidates"
+          }`
+        : guildTokens < 5
+          ? "Requires 5 Guild Tokens"
+          : "Commission Artwork — 5 Guild Tokens"}
+  </button>
+</div>
         </aside>
             </div>
 

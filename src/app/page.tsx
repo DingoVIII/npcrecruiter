@@ -1414,99 +1414,105 @@ async function startTokenCheckout(
     )}
   </div>
 
-  <div className="flex h-24 shrink-0 items-center">
+  <BottomActionBar>
   <button
     type="button"
     onClick={recruitNpcs}
-      disabled={!hasSpecies || isRecruiting}
-      className="w-full border border-[#7e2518] bg-[#8f2e1d] px-4 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white transition hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]"
-    >
-      {isRecruiting
-        ? "Interviewing Candidates..."
-        : "Recruit New Candidates — Free"}
-    </button>
+    disabled={!hasSpecies || isRecruiting}
+    className="w-full border border-[#7e2518] bg-[#8f2e1d] px-4 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white transition hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]"
+  >
+    {isRecruiting
+      ? "Interviewing Candidates..."
+      : "Recruit New Candidates — Free"}
+  </button>
+</BottomActionBar>
 
-    
-  </div>
 </div>
         </section>
 
         <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-[18px] border border-[#9e834e] bg-[#f3e5c8] shadow-[4px_5px_0_rgba(72,55,28,0.18)]">
-          <CreamHeading
-            title="Portrait Commissions"
-            subtitle="Bring your cast to life."
-          />
+  <CreamHeading
+    title="Portrait Commissions"
+    subtitle="Bring your cast to life."
+  />
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-5 pb-4">
-            <p className="mb-2 text-xs font-bold">Portrait Style</p>
-            <div className="grid grid-cols-3 gap-2">
-              {portraitStyles.map((style) => (
-                <button
-                  key={style}
-                  type="button"
-                  onClick={() => {
-  setPortraitStyle(style);
+  <div className="flex min-h-0 flex-1 flex-col px-5 pt-5 pb-4">
+    <p className="mb-2 text-xs font-bold">
+      Portrait Style
+    </p>
 
-  window.localStorage.setItem(
-    "npc-recruiter-portrait-style",
-    style,
-  );
-}}
-                  className={
-                    portraitStyle === style
-                      ? "border border-[#292720] bg-[#292720] px-2 py-2 text-[11px] font-bold text-white"
-                      : "border border-[#a9946d] bg-[#fff9ec] px-2 py-2 text-[11px] font-bold text-[#352f26] transition hover:bg-[#eee0c2]"
-                  }
-                >
-                  {style}
-                </button>
-              ))}
-            </div>
+    <div className="grid grid-cols-3 gap-2">
+      {portraitStyles.map((style) => (
+        <button
+          key={style}
+          type="button"
+          onClick={() => {
+            setPortraitStyle(style);
 
-            <div className="mt-3 grid grid-cols-2 gap-3">
-  {Array.from({ length: 4 }, (_, index) => {
-                const npc = npcs[index];
-                return (
-                  <PortraitSlot
-  key={index}
-  number={index + 1}
-  name={npc?.name}
-  ready={Boolean(npc?.hired)}
-  portraitUrl={npc?.portraitUrl}
-/>
-                );
-              })}
-            </div>
+            window.localStorage.setItem(
+              "npc-recruiter-portrait-style",
+              style,
+            );
+          }}
+          className={
+            portraitStyle === style
+              ? "border border-[#292720] bg-[#292720] px-2 py-2 text-[11px] font-bold text-white"
+              : "border border-[#a9946d] bg-[#fff9ec] px-2 py-2 text-[11px] font-bold text-[#352f26] transition hover:bg-[#eee0c2]"
+          }
+        >
+          {style}
+        </button>
+      ))}
+    </div>
+
+    <div className="mt-3 min-h-0 flex-1 overflow-y-auto [scrollbar-color:#8d6b2c_#17110c] [scrollbar-width:thin]">
+      <div className="grid grid-cols-2 gap-3">
+        {Array.from({ length: 4 }, (_, index) => {
+          const npc = npcs[index];
+
+          return (
+            <PortraitSlot
+              key={index}
+              number={index + 1}
+              name={npc?.name}
+              ready={Boolean(npc?.hired)}
+              portraitUrl={npc?.portraitUrl}
+            />
+          );
+        })}
+      </div>
+    </div>
+
+    <BottomActionBar>
+      <button
+        type="button"
+        onClick={generatePortraits}
+        disabled={
+          hiredCount !== 4 ||
+          guildTokens < 5 ||
+          isGeneratingPortraits
+        }
+        className="w-full border border-[#7e2518] bg-[#8f2e1d] px-4 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white transition hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]"
+      >
+        {isGeneratingPortraits
+          ? "The Artists Are Painting..."
+          : hiredCount !== 4
+            ? `Hire ${4 - hiredCount} More ${
+                4 - hiredCount === 1
+                  ? "Candidate"
+                  : "Candidates"
+              }`
+            : guildTokens < 5
+              ? "Requires 5 Guild Tokens"
+              : "Commission Artwork — 5 Guild Tokens"}
+      </button>
+    </BottomActionBar>
+</div>
+</aside>
+
 </div>
 
-           <div className="flex h-24 shrink-0 items-center">
-  <button
-    type="button"
-    onClick={generatePortraits}
-    disabled={
-      hiredCount !== 4 ||
-      guildTokens < 5 ||
-      isGeneratingPortraits
-    }
-    className="w-full border border-[#7e2518] bg-[#8f2e1d] px-4 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white transition hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]"
-  >
-    {isGeneratingPortraits
-      ? "The Artists Are Painting..."
-      : hiredCount !== 4
-        ? `Hire ${4 - hiredCount} More ${
-            4 - hiredCount === 1
-              ? "Candidate"
-              : "Candidates"
-          }`
-        : guildTokens < 5
-          ? "Requires 5 Guild Tokens"
-          : "Commission Artwork — 5 Guild Tokens"}
-  </button>
-</div>
-        </aside>
-            </div>
-
-      {isTreasuryOpen && (
+{isTreasuryOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-3xl overflow-hidden rounded-[18px] border-2 border-[#8d6b2c] bg-[#f3e5c8] shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#9e834e] bg-[linear-gradient(180deg,#2b2117_0%,#17110c_100%)] px-6 py-4 text-[#ead7a9]">
@@ -1587,7 +1593,19 @@ type TokenPackCardProps = {
   featured?: boolean;
   onPurchase: () => void;
 };
+type BottomActionBarProps = {
+  children: React.ReactNode;
+};
 
+function BottomActionBar({
+  children,
+}: BottomActionBarProps) {
+  return (
+    <div className="flex h-24 shrink-0 items-center px-0">
+      {children}
+    </div>
+  );
+}
 function TokenPackCard({
   title,
   tokens,

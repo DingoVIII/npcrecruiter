@@ -15,17 +15,17 @@ const stripe = new Stripe(stripeSecretKey);
 
 const tokenPacks = {
   starter: {
-    priceId: "price_1U1bcSCX3nzlqgsd9lfljsi3",
+    priceId: "price_1U1bcSCX3nzlgqsd9lfljsi3",
     tokens: 20,
     name: "Bronze Chest",
   },
   adventurer: {
-    priceId: "price_1U1bazCX3nzlqgsdY41XNq11",
+    priceId: "price_1U1bazCX3nzlgqsdY41XNq1l",
     tokens: 75,
     name: "Iron Strongbox",
   },
   guildmaster: {
-    priceId: "price_1U1ElKCX3nzlqgsd65yoov1k",
+    priceId: "price_1U1ElKCX3nzlgqsd65yoov1k",
     tokens: 200,
     name: "Golden Guild Vault",
   },

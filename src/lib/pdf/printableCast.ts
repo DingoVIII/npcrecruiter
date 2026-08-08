@@ -891,21 +891,27 @@ export async function generatePrintableCast(
   );
 
   npcs.forEach(
-    (npc, index) => {
-      drawPortraitCard(
-        doc,
-        npc,
-        index,
-        portraitDataUrls[index],
-      );
+  (npc, index) => {
+    drawPortraitCard(
+      doc,
+      npc,
+      index,
+      portraitDataUrls[index],
+    );
+  },
+);
 
-      drawTextCard(
-        doc,
-        npc,
-        index,
-      );
-    },
-  );
+const textCardOrder = [1, 0, 3, 2];
+
+textCardOrder.forEach(
+  (npcIndex, cardPosition) => {
+    drawTextCard(
+      doc,
+      npcs[npcIndex],
+      cardPosition,
+    );
+  },
+);
 
   drawFoldGuide(doc);
 

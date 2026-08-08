@@ -11,6 +11,7 @@ type Npc = {
   gender: string;
   species: string;
   occupation: string;
+  appearance: [string, string, string];
   personality: string;
   roleplayingCue: string;
   portraitPrompt: string;
@@ -1866,18 +1867,30 @@ function CompactNpcCard({
 
       <div className="mt-3 space-y-2 text-center text-[11px] leading-4">
         <div>
-          <p className="font-serif font-bold">
-            Occupation
-          </p>
-          <p>{npc.occupation}</p>
-        </div>
+  <p className="font-serif font-bold">
+    Occupation
+  </p>
+  <p>{npc.occupation}</p>
+</div>
 
-        <div>
-          <p className="font-serif font-bold">
-            Personality
-          </p>
-          <p>{npc.personality}</p>
-        </div>
+<div>
+  <p className="font-serif font-bold">
+    Appearance
+  </p>
+
+  <div>
+    {npc.appearance.map((feature) => (
+      <p key={feature}>• {feature}</p>
+    ))}
+  </div>
+</div>
+
+<div>
+  <p className="font-serif font-bold">
+    Personality
+  </p>
+  <p>{npc.personality}</p>
+</div>
 
         <div>
           <p className="font-serif font-bold">

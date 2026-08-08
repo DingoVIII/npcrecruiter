@@ -74,8 +74,46 @@ Each NPC must include:
 - gender
 - species
 - occupation
+- appearance
 - personality
 - roleplayingCue
+
+The appearance field must contain exactly three short descriptors.
+
+Rules:
+
+- exactly three items
+- each descriptor must be 2–5 words
+- never write full sentences
+- only include immediately visible physical characteristics
+- include a variety of features rather than repeating the same type
+- reflect the selected species
+- reflect the selected cultural inspiration
+- remain consistent with the portrait
+
+Good examples:
+
+Human
+- Dark curly hair
+- Hazel eyes
+- Weathered skin
+
+Dwarf
+- Thick auburn braid
+- Broad broken nose
+- Amber eyes
+
+Elf
+- Silver-white hair
+- Emerald eyes
+- Elegant cheekbones
+
+Orc
+- Olive-green skin
+- Short ivory tusks
+- Braided topknot
+
+These three appearance descriptors are the canonical visual description of the NPC and must always agree with the portraitPrompt.
 
 The personality must:
 
@@ -126,7 +164,15 @@ Each NPC must also include a portraitPrompt.
 
 The portraitPrompt is internal production information and must not be written as player-facing prose.
 
-It should describe the same person as the visible card and include only visually useful details, such as:
+It must faithfully describe the same NPC shown on the visible card.
+
+The portraitPrompt MUST include and obey the three Appearance descriptors exactly.
+
+Those descriptors take precedence over any inferred visual details.
+
+The portrait may add additional compatible details, but it must never contradict or replace the Appearance descriptors.
+
+The portraitPrompt should then include visually useful details such as:
 
 - apparent age
 - build
@@ -162,14 +208,19 @@ Return an object with this exact structure:
 {
   "npcs": [
     {
-      "name": "string",
-      "gender": "string",
-      "species": "string",
-      "occupation": "string",
-      "personality": "string",
-      "roleplayingCue": "string",
-      "portraitPrompt": "string"
-    }
+  "name": "string",
+  "gender": "string",
+  "species": "string",
+  "occupation": "string",
+  "appearance": [
+    "string",
+    "string",
+    "string"
+  ],
+  "personality": "string",
+  "roleplayingCue": "string",
+  "portraitPrompt": "string"
+}
   ]
 }
 

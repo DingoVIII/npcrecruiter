@@ -15,6 +15,7 @@ type GeneratedNpc = {
   gender: string;
   species: string;
   occupation: string;
+  appearance: [string, string, string];
   personality: string;
   roleplayingCue: string;
   portraitPrompt: string;
@@ -101,10 +102,19 @@ ${inspirationGuidance}`
     minLength: 1,
   },
   occupation: {
+  type: "string",
+  minLength: 1,
+},
+appearance: {
+  type: "array",
+  minItems: 3,
+  maxItems: 3,
+  items: {
     type: "string",
     minLength: 1,
   },
-  personality: {
+},
+personality: {
     type: "string",
     minLength: 1,
   },
@@ -118,14 +128,15 @@ ${inspirationGuidance}`
   },
 },
                   required: [
-                    "name",
-                    "gender",
-                    "species",
-                    "occupation",
-                    "personality",
-                    "roleplayingCue",
-                    "portraitPrompt",
-                  ],
+  "name",
+  "gender",
+  "species",
+  "occupation",
+  "appearance",
+  "personality",
+  "roleplayingCue",
+  "portraitPrompt",
+],
                 },
               },
             },
@@ -141,16 +152,22 @@ ${inspirationGuidance}`
   return /[\p{L}\p{N}]/u.test(value.trim());
 }
 
-const hasInvalidCandidate = result.npcs?.some((npc) =>
-  [
-    npc.name,
-    npc.gender,
-    npc.species,
-    npc.occupation,
-    npc.personality,
-    npc.roleplayingCue,
-    npc.portraitPrompt,
-  ].some((value) => !containsMeaningfulText(value)),
+const hasInvalidCandidate = result.npcs?.some(
+  (npc) =>
+    [
+      npc.name,
+      npc.gender,
+      npc.species,
+      npc.occupation,
+      npc.personality,
+      npc.roleplayingCue,
+      npc.portraitPrompt,
+    ].some((value) => !containsMeaningfulText(value)) ||
+    !Array.isArray(npc.appearance) ||
+    npc.appearance.length !== 3 ||
+    npc.appearance.some(
+      (value) => !containsMeaningfulText(value),
+    ),
 );
 
 if (

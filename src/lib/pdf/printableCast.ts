@@ -5,6 +5,7 @@ export type PrintableNpc = {
   gender: string;
   species: string;
   occupation: string;
+  appearance?: [string, string, string];
   personality: string;
   roleplayingCue: string;
   portraitUrl?: string;
@@ -279,7 +280,7 @@ function drawSectionLabel(
   setGold(doc);
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(6.6);
+  doc.setFontSize(7.2);
 
   doc.text(
     label.toUpperCase(),
@@ -433,7 +434,7 @@ function drawTextCard(
   setInk(doc);
 
   doc.setFont("helvetica", "bold");
-doc.setFontSize(8.2);
+doc.setFontSize(9);
 
 const occupationLines =
   doc.splitTextToSize(
@@ -470,6 +471,39 @@ doc.text(
     0.15 +
   0.1;
 
+  drawSectionLabel(
+  doc,
+  "Appearance",
+  contentX,
+  cursorY,
+);
+
+cursorY += 0.18;
+
+setInk(doc);
+
+doc.setFont("helvetica", "normal");
+doc.setFontSize(8.6);
+
+const appearanceLines =
+  npc.appearance?.map(
+    (feature) => `• ${feature}`,
+  ) ?? [];
+
+doc.text(
+  appearanceLines,
+  contentX,
+  cursorY,
+  {
+    lineHeightFactor: 1.18,
+  },
+);
+
+cursorY +=
+  appearanceLines.length *
+    0.15 +
+  0.08;
+
   doc.setDrawColor(
     RULE_RGB.r,
     RULE_RGB.g,
@@ -499,7 +533,7 @@ doc.text(
   setInk(doc);
 
   doc.setFont("times", "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(9.8);
 
   const personalityLines =
     doc.splitTextToSize(
@@ -551,7 +585,7 @@ doc.text(
   setInk(doc);
 
   doc.setFont("times", "italic");
-  doc.setFontSize(9);
+  doc.setFontSize(9.8);
 
   const cueLines =
     doc.splitTextToSize(

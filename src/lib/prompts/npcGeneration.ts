@@ -52,8 +52,8 @@ RECRUITMENT RULES
 
 - Obey every user constraint.
 - Use only the allowed species.
-- Make all nine NPCs distinct from one another.
-- All nine should feel as though they belong naturally in the same location and society.
+- Make all four NPCs distinct from one another.
+- All four should feel as though they belong naturally in the same location and society.
 - Choose occupations that make sense for the selected location.
 - Blend species and cultural inspiration when creating every name.
 - Let the selected cultural naming system dominate, with species identity influencing it subtly.
@@ -61,9 +61,12 @@ RECRUITMENT RULES
 - Do not use generic fantasy names that ignore the selected inspiration.
 - Do not repeat names, occupations, personalities, or roleplaying cues.
 - Every full name must be clearly distinct from every other name in the set.
-- Avoid names that share the same dominant sound, prefix, suffix, or rhythm.
-- Each of the nine given names must begin with a different letter.
-- Avoid comedy names unless the selected inspiration clearly calls for comedy.
+- Avoid duplicate or confusingly similar names.
+- Given names should not all begin with the same letter.
+- Avoid obvious alphabetical sequences such as A, B, C, D.
+- Choose a natural variety of starting letters that suits the selected cultural inspiration.
+- Similar naming rhythms are acceptable when they reflect the chosen culture, but the names should remain easy for a Game Master to distinguish during play.
+- Avoid comedy names unless the selected inspiration clearly calls for comedy.  
 - Keep the characters immediately usable at the table.
 
 VISIBLE CARD INFORMATION
@@ -142,7 +145,7 @@ The roleplaying cue must:
 - vary across different cue types, including speech, gesture, posture,
   interaction, ritual, avoidance and physical habit
 
-  Across the full set of nine NPCs, do not overuse one kind of roleplaying cue.
+  Across the full set of four NPCs, do not overuse one kind of roleplaying cue.
 
 The set should include a natural mix of spoken habits, gestures, posture,
 social interactions, rituals, avoidance behaviours and physical habits.

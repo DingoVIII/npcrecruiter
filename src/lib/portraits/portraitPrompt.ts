@@ -5,6 +5,7 @@ export type PortraitNpc = {
   gender: string;
   species: string;
   occupation: string;
+  appearance?: [string, string, string];
   personality: string;
   portraitPrompt: string;
 };
@@ -475,7 +476,21 @@ ${npc.occupation}
 Personality:
 ${npc.personality}
 
-APPEARANCE AND CULTURAL DETAILS
+CANONICAL APPEARANCE — HIGHEST PRIORITY
+
+${npc.appearance?.length
+  ? npc.appearance.map((feature) => `- ${feature}`).join("\n")
+  : "- No canonical appearance descriptors supplied."}
+
+These appearance descriptors are authoritative.
+
+- Preserve every supplied descriptor visibly in the finished portrait.
+- These descriptors override any conflicting detail elsewhere in this prompt.
+- Do not reinterpret, replace or contradict them.
+- Additional visual details are allowed only when they are compatible with all supplied descriptors.
+- If the species profile, cultural guidance, occupation, personality or generated portrait description conflicts with a canonical appearance descriptor, the canonical appearance descriptor wins.
+
+ADDITIONAL APPEARANCE AND CULTURAL DETAILS
 
 ${npc.portraitPrompt}
 
@@ -509,7 +524,10 @@ CHARACTER CONSISTENCY
 - Preserve the culturally integrated clothing, grooming and adornment.
 - Reflect the occupation through clothing, posture or one appropriate object.
 - Let the personality subtly influence the expression and posture.
-- Follow the supplied appearance description closely.
+- Treat the CANONICAL APPEARANCE section as the highest-priority visual instruction.
+- Every canonical appearance descriptor must be visibly represented.
+- Never allow inferred details to contradict a canonical appearance descriptor.
+- Use the additional appearance description only to enrich details not already fixed by the canonical appearance.
 - Do not replace the character with a generic fantasy stereotype.
 
 INDIVIDUAL VARIATION

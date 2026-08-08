@@ -40,6 +40,7 @@ type PortraitJobNpc = {
   gender: string;
   species: string;
   occupation: string;
+  appearance?: [string, string, string];
   personality: string;
   portraitPrompt: string;
 };
@@ -191,14 +192,24 @@ export async function POST(request: Request) {
     }
 
     const invalidNpc = body.npcs.find(
-      (npc) =>
-        !npc.name?.trim() ||
-        !npc.gender?.trim() ||
-        !npc.species?.trim() ||
-        !npc.occupation?.trim() ||
-        !npc.personality?.trim() ||
-        !npc.portraitPrompt?.trim(),
-    );
+  (npc) =>
+    !npc.name?.trim() ||
+    !npc.gender?.trim() ||
+    !npc.species?.trim() ||
+    !npc.occupation?.trim() ||
+    !npc.personality?.trim() ||
+    !npc.portraitPrompt?.trim() ||
+    (npc.appearance !== undefined &&
+      (
+        !Array.isArray(npc.appearance) ||
+        npc.appearance.length !== 3 ||
+        npc.appearance.some(
+          (feature) =>
+            typeof feature !== "string" ||
+            !feature.trim(),
+        )
+      )),
+);
 
     if (invalidNpc) {
       return NextResponse.json(

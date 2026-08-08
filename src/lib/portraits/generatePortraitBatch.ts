@@ -18,6 +18,7 @@ export type GeneratedPortrait = {
 export async function generatePortraitBatch(
   npcs: PortraitNpc[],
   style: string,
+  inspiration?: string,
 ): Promise<GeneratedPortrait[]> {
   const batchStartedAt = Date.now();
 
@@ -31,7 +32,11 @@ export async function generatePortraitBatch(
 
       const result = await openai.images.generate({
         model: "gpt-image-2",
-        prompt: buildPortraitPrompt(npc, style),
+        prompt: buildPortraitPrompt(
+  npc,
+  style,
+  inspiration,
+),
         size: "1024x1536",
         quality: "medium",
         output_format: "webp",

@@ -1,3 +1,5 @@
+import { formatInspirationPrompt } from "@/lib/inspirationPrompts";
+
 export type PortraitNpc = {
   name: string;
   gender: string;
@@ -127,99 +129,44 @@ function getSpeciesVisualProfile(npc: PortraitNpc) {
       return `
 HUMAN VISUAL IDENTITY
 
-- Use the full natural range of human skin tones, facial structures, hair textures, ages, builds and physical features.
-- Reflect the supplied culture, occupation and environment rather than defaulting to generic north-western European fantasy.
-- Preserve ordinary imperfections, asymmetry, maturity and signs of lived experience.
-- Avoid making every human young, attractive, athletic or heroic.
-`.trim();
-
-    case "orc":
-      return `
-ORC VISUAL IDENTITY
-
-- Large, broad-shouldered and heavily muscular.
-- Thick neck, broad chest and physically imposing frame.
-- Skin should be deep green, olive green, grey-green, moss green or slate green.
-- Broad nose, heavy brow, powerful jaw and clearly visible lower tusks.
-- Medium-sized pointed ears.
-- The character must remain unmistakably orcish regardless of gender.
-- Female orcs should retain strong orcish facial anatomy and visible tusks rather than appearing like green-skinned humans or elves.
-`.trim();
-
-    case "half orc":
-      return `
-HALF-ORC VISUAL IDENTITY
-
-- A believable blend of human and orc ancestry.
-- Athletic, strong and broad-shouldered, but leaner and less massive than a full orc.
-- Skin should be olive, muted grey-green, weathered tan or subdued bronze.
-- Primarily human facial proportions with a stronger jaw, subtle heavy brow and smaller lower tusks.
-- Ears should be only slightly pointed.
-- The character should be visibly orc-blooded without being visually identical to a full orc.
-`.trim();
-
-    case "hobgoblin":
-  return `
-HOBGOBLIN VISUAL IDENTITY
-
-- Tall, lean and athletic rather than bulky.
-- Burnished bronze, copper, russet, ochre, burnt orange or deep red skin.
-- Do not use green or grey-green orc colouring.
-- Strong brow ridge.
-- Square jaw.
-- Broad nose.
-- Slight lower tusks or noticeably enlarged lower canines.
-- Large pointed ears.
-- Clearly goblinoid facial anatomy.
-- Intelligent, disciplined and intimidating.
-- Strong military posture and composed bearing.
-- More human in proportion than an orc, but more goblinoid than an elf.
-- Do not resemble a red-skinned elf.
-- Do not use delicate elven facial features, fine bone structure or graceful elven beauty.
-- Preserve a lean build without losing the heavier brow, jaw and goblinoid face.
-`.trim();
-
-    case "goblin":
-      return `
-GOBLIN VISUAL IDENTITY
-
-- Small, short, thin, wiry and agile.
-- Built for speed and nimbleness rather than strength.
-- Skin should be yellow-green, olive, brown-green or muddy green.
-- Very large pointed ears.
-- Sharp narrow features, prominent nose, alert eyes and a narrow chin.
-- The character should appear clever, quick and resourceful.
-- Do not give the goblin the heavy musculature or broad facial structure of an orc.
+- Use genuinely human anatomy and natural human craniofacial proportions.
+- Use the full natural range of human skin tones, facial structures, hair textures, ages, body types and physical features.
+- Reflect the supplied culture, occupation and environment rather than defaulting to north-western European fantasy.
+- Preserve ordinary imperfections, asymmetry, maturity, scars, weathering and signs of lived experience.
+- Do not make every human young, attractive, athletic or heroic.
 `.trim();
 
     case "dwarf":
       return `
 DWARF VISUAL IDENTITY
 
-- Short, broad, dense and powerfully built.
-- Thick torso, sturdy limbs, broad shoulders and a low centre of gravity.
-- The body should look naturally compact rather than like a scaled-down human.
-- Skin may range through ordinary human tones, including fair, ruddy, weathered and deeply tanned complexions.
-- Strong brow, substantial nose, broad jaw and heavy facial structure.
-- Hair should usually be thick and coarse.
-- Beards are common among male dwarves but should vary naturally in length, texture and grooming.
-- Female dwarves should remain clearly adult, strong-featured and distinctly dwarven.
-- Avoid making every dwarf elderly, bearded or dressed as a miner.
+- The character must be unmistakably dwarven before clothing, beard or hairstyle are considered.
+- Use a broad, compact skull with heavy bone structure.
+- Use a shorter, compressed midface, wide cheekbones, substantial nose, heavy brow and broad powerful jaw.
+- The neck should be thick and short, with the head sitting heavily between broad shoulders.
+- The visible torso should feel dense, compact and unusually powerful.
+- Facial proportions should be wider, heavier and more compressed than ordinary human proportions.
+- Do not create an ordinary human face and simply add a beard.
+- Do not rely on beard length to communicate dwarf ancestry.
+- Male dwarves may have beards, but beard length, texture and grooming should vary naturally.
+- Female dwarves should have the same strong dwarven bone structure and should not simply look like short human women.
+- Avoid making every dwarf elderly, bearded, gruff or dressed as a miner.
 `.trim();
 
     case "elf":
       return `
 ELF VISUAL IDENTITY
 
-- Tall, graceful and slender with believable anatomy.
-- Fine bone structure, high cheekbones and elegant facial proportions.
-- Long pointed ears that are clearly visible but not excessively oversized.
-- Skin may use the full natural human range, from pale through deep brown.
-- Elves should vary meaningfully in facial shape, age, complexion, hair texture and body type.
-- Their appearance should feel refined and poised rather than fragile.
-- Preserve natural imperfections, maturity and individuality.
-- Full-blooded elves are naturally beardless and should not have moustaches, stubble, sideburns or other facial hair.
-- Long head hair, brows and eyelashes are normal, but the lower face should remain clean-shaven.
+- The character must be unmistakably elven before the ears are noticed.
+- Use distinctly non-human but believable facial proportions.
+- Use an elongated face, high cheekbones, narrower jaw, refined cranial structure and slightly larger almond-shaped eyes.
+- The nose bridge should be fine and elegant without becoming tiny or doll-like.
+- The ears should be long and clearly pointed, but they must not be the only feature communicating elf ancestry.
+- The visible build should feel long-framed, lightly built and naturally graceful rather than merely thin.
+- Preserve natural age, scars, freckles, asymmetry and individuality.
+- Full-blooded elves are completely beardless.
+- Do not give full-blooded elves beards, moustaches, stubble, sideburns or any other facial hair.
+- Do not create an ordinary human face and simply attach pointed ears.
 - Do not make every elf young, pale, blond, flawless or conventionally beautiful.
 `.trim();
 
@@ -227,43 +174,117 @@ ELF VISUAL IDENTITY
       return `
 HALF-ELF VISUAL IDENTITY
 
-- A believable blend of human and elven ancestry.
-- Human facial proportions with subtly refined bone structure and slightly pointed ears.
-- Ears should be shorter and less dramatic than those of a full elf.
-- Build may range from ordinary human proportions to gently slender and graceful.
+- Create a believable intermediate anatomy between human and elf.
+- The face should remain primarily human in proportion, but with subtly higher cheekbones, slightly finer bone structure, a somewhat narrower jaw and gently almond-shaped eyes.
+- Ears should be modestly pointed and clearly shorter than those of a full elf.
+- The character should look visibly touched by elven ancestry without appearing identical to a full elf.
+- Build may range from ordinary human proportions to slightly more slender and graceful.
 - Skin, hair and eye colours should use the full natural human range.
-- The character should appear visibly touched by elven ancestry without looking identical to a full elf.
-- Avoid making every half-elf youthful, flawless or exceptionally beautiful.
+- Half-elves may have facial hair depending on human ancestry and age.
+- Avoid making every half-elf youthful, flawless, delicate or conventionally beautiful.
+`.trim();
+
+    case "orc":
+      return `
+ORC VISUAL IDENTITY
+
+- The character must be unmistakably orcish from facial anatomy alone.
+- Use clearly non-human craniofacial structure.
+- Use a broad skull, heavy projecting brow, deep-set eyes, wide flattened nose, massive jaw and pronounced lower facial structure.
+- Lower tusks must emerge naturally from the jaw and visibly alter the shape of the mouth.
+- The neck should be thick and powerful, with the head sitting heavily into broad shoulders.
+- The visible frame should be massive, dense and muscular.
+- Skin may be deep green, olive green, grey-green, moss green or slate green, but skin colour alone must never define the species.
+- Do not create an ordinary human face and simply recolour the skin green.
+- Do not preserve ordinary human facial proportions.
+- Female orcs should retain strong orcish craniofacial anatomy and visible tusks rather than appearing as green-skinned human women.
+`.trim();
+
+    case "half orc":
+      return `
+HALF-ORC VISUAL IDENTITY
+
+- Create genuinely intermediate anatomy between human and orc.
+- Use primarily human proportions but with a visibly heavier brow, wider jaw, broader nose, thicker neck and more robust facial bone structure.
+- Include small but clear lower tusks that naturally affect the mouth shape.
+- The character should appear strong and broad-shouldered without reaching full-orc mass.
+- Skin may be muted olive, grey-green, weathered tan, bronze or subdued green.
+- Ears may be only slightly pointed.
+- Do not create a muscular human and simply add green skin or tiny tusks.
+- Do not make the character visually identical to either a full human or full orc.
+`.trim();
+
+    case "goblin":
+      return `
+GOBLIN VISUAL IDENTITY
+
+- The character must be visibly goblinoid from facial proportions alone.
+- Use a small, narrow skull with sharp facial structure.
+- Include very large pointed ears, a prominent or hooked nose, alert eyes, narrow cheeks and a pointed or reduced chin.
+- The visible build should be short, wiry, light and agile rather than muscular.
+- Skin may be yellow-green, olive, muddy green, brown-green or ochre-green.
+- Do not create a small human face and recolour it green.
+- Do not give the goblin the broad skull, massive jaw or heavy musculature of an orc.
+- The overall impression should be quick, clever and resourceful.
+`.trim();
+
+    case "hobgoblin":
+      return `
+HOBGOBLIN VISUAL IDENTITY
+
+- The character must look goblinoid rather than elven or human.
+- Use a tall, lean, athletic frame.
+- Use a strong brow ridge, square jaw, broad nose, large pointed ears and subtly enlarged lower canines or small tusks.
+- Facial structure should be heavier and more angular than human anatomy.
+- Skin should be burnished bronze, copper, russet, ochre, burnt orange or deep red.
+- Do not use green or grey-green orc colouring.
+- Preserve disciplined posture and composed bearing.
+- Do not create a red-skinned elf.
+- Do not use delicate elven bone structure or graceful elven facial proportions.
+- Do not rely on skin colour alone to communicate species.
+`.trim();
+
+    case "bugbear":
+      return `
+BUGBEAR VISUAL IDENTITY
+
+- The character must be unmistakably bugbear rather than a hairy human.
+- Use a large goblinoid skull with heavy brow, broad jaw, deep-set eyes and large pointed ears.
+- The visible frame should be large, long-limbed, powerful and slightly predatory in proportion.
+- Arms may appear longer than ordinary human proportions.
+- Cover visible skin with coarse fur ranging through brown, russet, black, grey or tawny shades.
+- Facial fur should integrate naturally with goblinoid anatomy rather than resembling a beard pasted onto a human face.
+- Preserve individual fur pattern, grooming, scars and cultural details.
+- Do not make the character resemble an ape, bear or ordinary human.
 `.trim();
 
     case "halfling":
       return `
 HALFLING VISUAL IDENTITY
 
-- A small adult humanoid with compact, naturally proportioned anatomy.
-- Shorter and somewhat softer or rounder in build than a gnome.
-- Friendly, expressive facial features and often rounded cheeks.
+- The character must look like a small adult humanoid, never a child.
+- Use compact adult proportions with a relatively broad face, softer jaw and sturdy neck.
+- The visible frame should feel naturally compact rather than like a scaled-down human child.
+- Facial proportions should remain adult and mature.
 - Skin, hair and eye colours should use the full natural human range.
-- Hair is often thick, wavy or curly, but should vary between individuals.
-- The character should feel warm, practical and approachable without becoming comic.
-- Halflings must look like adults, never children.
-- Avoid oversized heads, childlike facial proportions and exaggerated cartoon features.
-- Do not make every halfling cheerful, plump or barefoot.
+- Hair is often thick, wavy or curly but should vary naturally.
+- Do not use oversized heads, childlike eyes or juvenile facial proportions.
+- Do not make every halfling cheerful, round-faced, plump or barefoot.
 `.trim();
 
     case "gnome":
       return `
 GNOME VISUAL IDENTITY
 
-- A small adult humanoid, generally slimmer and more angular than a halfling.
-- Compact but lightly built, with lively posture and expressive movement.
-- Large, curious eyes and an alert, intelligent expression.
-- A slightly prominent nose is common, but it should remain believable rather than cartoonish.
+- The character must look like a small adult humanoid, never a child.
+- Use a smaller, slimmer and more angular build than a halfling.
+- The face should be narrow and lively, with alert eyes, a somewhat prominent nose and expressive features.
 - Ears may be subtly pointed.
-- Hair may be unruly, practical, unusual or creatively styled while still matching the culture and occupation.
+- The visible body should feel lightly built and energetic rather than soft or rounded.
 - Skin, hair and eye colours should use the full natural human range.
-- Gnomes must look like adults, never children.
-- Avoid steampunk clichés, novelty clothing and comic proportions unless explicitly requested.
+- Do not make the character look like a child-sized human.
+- Do not default to steampunk goggles, novelty inventions or comic proportions.
+- Make the gnome clearly distinct from a halfling through slimmer anatomy and sharper facial structure.
 `.trim();
 
     case "tiefling": {
@@ -293,9 +314,20 @@ GNOME VISUAL IDENTITY
         "solid violet eyes",
       ] as const;
 
-      const skinColour = chooseStableOption(skinColours, seed);
-      const hornStyle = chooseStableOption(hornStyles, seed, 2);
-      const eyeStyle = chooseStableOption(eyeStyles, seed, 4);
+      const skinColour = chooseStableOption(
+        skinColours,
+        seed,
+      );
+      const hornStyle = chooseStableOption(
+        hornStyles,
+        seed,
+        2,
+      );
+      const eyeStyle = chooseStableOption(
+        eyeStyles,
+        seed,
+        4,
+      );
 
       return `
 TIEFLING VISUAL IDENTITY
@@ -303,11 +335,13 @@ TIEFLING VISUAL IDENTITY
 - This Tiefling has ${skinColour} skin.
 - Include ${hornStyle}.
 - Include ${eyeStyle}.
-- The character should have unmistakably infernal ancestry while retaining varied humanoid facial structures.
-- A tail should be present where composition permits, but it should remain a natural part of the body rather than dominating the portrait.
-- Horns should emerge naturally from the skull and remain consistent in material, texture and shape.
-- Tieflings should vary in face, build, age, hair, horns and complexion.
-- Do not make every Tiefling red-skinned, seductive, glamorous or villainous.
+- Horns must emerge naturally from the skull and visibly alter the silhouette of the head.
+- The horn bases should feel anatomically integrated rather than attached like costume pieces.
+- Facial structure may remain broadly humanoid but should include subtle infernal traits such as unusual brow structure, cheekbones, eyes or ear shape.
+- A tail should be present where composition permits, but it should remain a natural anatomical feature rather than dominating the portrait.
+- Tieflings should vary strongly in age, build, face, hair, horns and complexion.
+- Do not create an ordinary human face and merely add horns.
+- Do not make every Tiefling seductive, glamorous, villainous or conventionally beautiful.
 - Do not add wings unless the supplied appearance explicitly requests them.
 `.trim();
     }
@@ -316,12 +350,12 @@ TIEFLING VISUAL IDENTITY
       return `
 AASIMAR VISUAL IDENTITY
 
-- Use believable humanoid anatomy and the full natural range of human skin tones, facial structures and body types.
-- Suggest celestial heritage through presence, composure and striking eyes rather than constant glowing effects.
-- The character may have unusually clear, bright or subtly luminous-looking eyes without emitting visible beams or magical light.
-- Their bearing may feel calm, dignified, intense or quietly commanding.
-- Preserve natural skin texture, age, scars, wrinkles and ordinary physical imperfections.
-- Do not make every Aasimar pale, blond, youthful or conventionally beautiful.
+- Aasimar should remain fundamentally humanoid and may closely resemble humans.
+- Use believable human anatomy and the full natural range of human skin tones, facial structures, ages and body types.
+- Suggest celestial ancestry primarily through unusual eyes, striking presence, subtle symmetry or an almost uncanny composure.
+- The eyes may appear unusually clear, bright, metallic or faintly luminous without emitting visible magical light.
+- Preserve scars, wrinkles, asymmetry and ordinary physical imperfections.
+- Do not automatically make the character pale, blond, youthful, flawless or conventionally beautiful.
 - Do not add halos, wings, radiant backgrounds or visible magical effects unless explicitly requested.
 `.trim();
 
@@ -329,14 +363,14 @@ AASIMAR VISUAL IDENTITY
       return `
 GOLIATH VISUAL IDENTITY
 
-- Very tall, massive and powerfully built.
-- Broad shoulders, thick neck, large hands and visibly heavy bone structure.
+- The character must look physically enormous even in a chest-up portrait.
+- Use extremely heavy bone structure, a broad skull, wide cheekbones, strong jaw, thick neck and massive shoulders.
+- The head should sit deeply between the shoulders rather than on a long human neck.
+- Facial proportions should feel larger, broader and heavier than ordinary human anatomy.
 - Skin should range through stone-like greys, muted blue-greys, ash tones and weathered slate.
 - Natural darker markings, mottling or culturally meaningful skin patterns may be present.
-- Facial features should be strong, broad and mature.
-- Hair may be sparse, shaved or practical, but should vary between individuals.
-- Scars, weather exposure and signs of an outdoor life are appropriate.
-- Avoid making every Goliath bald, tattooed, expressionless or dressed as a barbarian.
+- Do not create a large human and simply add grey skin or tattoos.
+- Avoid making every Goliath bald, expressionless, scarred or dressed as a barbarian.
 `.trim();
 
     case "dragonborn": {
@@ -353,56 +387,52 @@ GOLIATH VISUAL IDENTITY
         "white",
       ] as const;
 
-      const colour = chooseStableOption(dragonbornColours, seed);
+      const colour = chooseStableOption(
+        dragonbornColours,
+        seed,
+      );
 
       return `
 DRAGONBORN VISUAL IDENTITY
 
 - This Dragonborn has a ${colour} draconic lineage.
-- Use a natural range of shades appropriate to ${colour} scales.
-- Keep this one colour lineage consistent across the face, neck and visible body.
-- Subtle variation in scale shade and pattern is welcome, but do not mix several unrelated dragon colours.
-- Use clearly reptilian draconic facial anatomy rather than a human face with scales.
-- Include a strong muzzle, defined brow, species-appropriate horns or cranial ridges and layered scales.
-- Vary horn shape, scale pattern and facial structure naturally between individuals.
-- The character must remain unmistakably Dragonborn regardless of gender.
-- Do not add wings unless the supplied appearance explicitly requests them.
+- Use clearly reptilian draconic anatomy rather than human facial structure.
+- The skull must include a strong muzzle, pronounced brow, layered scales and species-appropriate horns, crests or cranial ridges.
+- The jaw should be reptilian and robust rather than human-shaped.
+- Eyes should sit naturally within a draconic skull.
+- Keep the ${colour} lineage consistent across visible scales.
+- Subtle variation in shade and scale pattern is welcome, but do not mix unrelated dragon colours.
+- The visible neck and shoulders should retain scaled, draconic anatomy.
+- Do not create a human face and add scales.
+- Do not make the Dragonborn look like a human wearing a reptile mask.
+- Do not make the character resemble a kobold.
+- Do not add wings unless explicitly requested.
 `.trim();
     }
-
-    case "bugbear":
-      return `
-BUGBEAR VISUAL IDENTITY
-
-- Large, long-limbed and powerfully built with a heavy goblinoid frame.
-- Covered in coarse fur ranging through brown, russet, black, grey or tawny shades.
-- Broad goblinoid face, deep-set eyes, strong jaw and large pointed ears.
-- Arms may appear slightly longer than human proportions.
-- The character should look naturally stealthy and predatory without becoming a generic ape or bear.
-- Preserve individual grooming, scars, fur patterns and cultural details.
-`.trim();
 
     case "kobold":
       return `
 KOBOLD VISUAL IDENTITY
 
-- Small, lightly built and clearly reptilian.
-- Narrow draconic muzzle, alert eyes, small horns or cranial ridges and fine scales.
+- The character must be clearly reptilian and distinctly smaller and lighter than a Dragonborn.
+- Use a narrow draconic skull, small muzzle, alert eyes, fine scales and delicate horns or cranial ridges.
+- The visible frame should be slight, narrow and agile.
 - Scale colours may vary naturally through earthy reds, rust, ochre, brown, grey, black, green or muted metallic tones.
-- The character should look quick, clever and physically slight rather than muscular.
-- Do not make the kobold look like a miniature Dragonborn; proportions should be smaller, sharper and more delicate.
+- The skull should feel sharper and more delicate than Dragonborn anatomy.
+- Do not create a small human face with scales.
+- Do not make the kobold look like a miniature Dragonborn.
+- Avoid broad shoulders, massive jaws and heavy dragon-like musculature.
 `.trim();
 
     default:
       return `
 SPECIES VISUAL IDENTITY
 
-Follow the supplied species and appearance description closely.
-
-Use recognisable, species-appropriate anatomy, colouring, facial structure,
-ears, skin, scales, fur, horns and body proportions where applicable.
-
-Do not replace the requested species with a generic human, elf or orc.
+- Follow the supplied species and appearance description closely.
+- The requested species must be recognizable from anatomy and proportions before clothing, colour, ears, horns, facial hair or accessories are considered.
+- Use species-appropriate skull shape, facial structure, neck, ears, skin, scales, fur, horns and visible body proportions where applicable.
+- If the species is non-human, do not begin with an ordinary human face and add species markers afterward.
+- Do not replace the requested species with a generic human, elf or orc.
 `.trim();
   }
 }
@@ -410,7 +440,12 @@ Do not replace the requested species with a generic human, elf or orc.
 export function buildPortraitPrompt(
   npc: PortraitNpc,
   style: string,
+  inspiration?: string,
 ) {
+  const inspirationGuidance =
+  inspiration
+    ? formatInspirationPrompt(inspiration)
+    : "";
   return `
 Create a polished vertical fantasy character portrait for a tabletop
 roleplaying game NPC.
@@ -444,6 +479,14 @@ APPEARANCE AND CULTURAL DETAILS
 
 ${npc.portraitPrompt}
 
+${
+  inspirationGuidance
+    ? `CULTURAL REFERENCE
+
+${inspirationGuidance}`
+    : ""
+}
+
 COMPOSITION
 
 - Show the head and upper torso, approximately chest-up.
@@ -458,6 +501,10 @@ COMPOSITION
 
 CHARACTER CONSISTENCY
 
+- Species must be communicated primarily through anatomy and proportions.
+- Do not rely on skin colour, ears, horns, facial hair or accessories alone to communicate species.
+- If the requested species is non-human, build the skull, face, neck and visible body using the species profile first.
+- If the portrait would still look human after removing colour, ears, horns, hair and accessories, the non-human anatomy is not strong enough.
 - Preserve the supplied species-specific physical features.
 - Preserve the culturally integrated clothing, grooming and adornment.
 - Reflect the occupation through clothing, posture or one appropriate object.

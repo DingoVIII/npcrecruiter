@@ -47,6 +47,7 @@ type PortraitJobNpc = {
 type CreatePortraitJobRequest = {
   npcs: PortraitJobNpc[];
   style: string;
+  inspiration?: string;
   reroll?: boolean;
 };
 
@@ -336,15 +337,16 @@ export async function POST(request: Request) {
     } = await supabaseAdmin
       .from("portrait_jobs")
       .insert({
-        user_id: user.id,
-        cast_id: activeCast.id,
-        status: "queued",
-        portrait_style: body.style.trim(),
-        requested_npcs: body.npcs,
-        completed_portraits: [],
-        token_cost: tokenCost,
-        is_reroll: isReroll,
-      })
+  user_id: user.id,
+  cast_id: activeCast.id,
+  status: "queued",
+  portrait_style: body.style.trim(),
+  inspiration: body.inspiration?.trim() || null,
+  requested_npcs: body.npcs,
+  completed_portraits: [],
+  token_cost: tokenCost,
+  is_reroll: isReroll,
+})
       .select(
         `
           id,

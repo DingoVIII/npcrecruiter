@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
-
+import { formatInspirationPrompt } from "@/lib/inspirationPrompts";
 import {
   buildNpcGenerationPrompt,
   type RecruitNpcInput,
@@ -46,13 +46,27 @@ export async function POST(request: Request) {
   Math.max(1, Math.floor(body.count ?? 4)),
 );
 
-    const prompt = buildNpcGenerationPrompt({
-      ...body,
-      count: requestedCount,
-      existingNames: Array.isArray(body.existingNames)
-        ? body.existingNames
-        : [],
-    });
+    const basePrompt = buildNpcGenerationPrompt({
+  ...body,
+  count: requestedCount,
+  existingNames: Array.isArray(body.existingNames)
+    ? body.existingNames
+    : [],
+});
+
+const inspirationGuidance =
+  formatInspirationPrompt(body.inspiration);
+
+const prompt = inspirationGuidance
+  ? `${basePrompt}
+
+INSPIRATION LIBRARY GUIDANCE
+
+Use the following cultural guidance to make the NPCs feel coherent and distinctive.
+Apply it naturally rather than mechanically.
+
+${inspirationGuidance}`
+  : basePrompt;
 
     const response = await openai.responses.create({
       model: "gpt-5-mini",

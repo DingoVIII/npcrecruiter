@@ -29,6 +29,7 @@ type PortraitJob = {
   user_id: string;
   cast_id: string;
   status: "generating";
+  inspiration: string | null;
   portrait_style: string;
   requested_npcs: PortraitNpc[];
   token_cost: number;
@@ -120,6 +121,7 @@ async function claimPortraitJob(
         cast_id,
         status,
         portrait_style,
+        inspiration,
         requested_npcs,
         token_cost,
         is_reroll
@@ -157,9 +159,10 @@ if (
 }
 
   return generatePortraitBatch(
-    job.requested_npcs,
-    job.portrait_style,
-  );
+  job.requested_npcs,
+  job.portrait_style,
+  job.inspiration ?? undefined,
+);
 }
 
 async function completePortraitJob(

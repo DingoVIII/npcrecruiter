@@ -99,6 +99,8 @@ const locations = [
 
 const inspirations = [
   "Any",
+
+  // Europe
   "Roman-inspired",
   "Greek-inspired",
   "Norse-inspired",
@@ -112,22 +114,54 @@ const inspirations = [
   "French-inspired",
   "Spanish-inspired",
   "Italian-inspired",
+  "Byzantine-inspired",
+  "Venetian-inspired",
+
+  // Ancient Near East
+  "Sumerian-inspired",
+  "Babylonian-inspired",
+  "Assyrian-inspired",
   "Persian-inspired",
   "Arabic-inspired",
   "Ottoman-inspired",
+  "Bedouin-inspired",
+
+  // Africa
   "Egyptian-inspired",
   "Berber-inspired",
   "West African-inspired",
-  "Indian-inspired",
+  "Maasai-inspired",
+  "Zulu-inspired",
+  "Ethiopian-inspired",
+
+  // Asia
+  "Indian (South Asian)-inspired",
   "Chinese-inspired",
   "Japanese-inspired",
   "Korean-inspired",
   "Mongolian-inspired",
   "Tibetan-inspired",
+  "Khmer-inspired",
+  "Thai-inspired",
+  "Vietnamese-inspired",
+
+  // Indigenous Americas
+  "Lakota (Sioux)-inspired",
+  "Apache-inspired",
+  "Cherokee-inspired",
+  "Iroquois (Haudenosaunee)-inspired",
+  "Navajo (Diné)-inspired",
+
+  // Mesoamerica / Andes
   "Aztec-inspired",
   "Mayan-inspired",
   "Incan-inspired",
+
+  // Oceania
   "Polynesian-inspired",
+  "Māori-inspired",
+
+  // Fantasy
   "Forgotten Realms-inspired",
   "Dragonlance-inspired",
   "Middle-earth-inspired",
@@ -138,6 +172,7 @@ const inspirations = [
   "Runeterra-inspired",
   "Dark Souls-inspired",
   "Critical Role-inspired",
+
   "Custom",
 ];
 
@@ -527,9 +562,10 @@ function updateNpc(index: number, updatedNpc: Npc) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        style: portraitStyle,
-        npcs: hiredNpcs,
-      }),
+  style: portraitStyle,
+  inspiration,
+  npcs: hiredNpcs,
+}),
     });
 
     const result = (await response.json()) as {

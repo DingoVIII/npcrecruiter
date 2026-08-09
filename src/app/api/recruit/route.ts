@@ -1,3 +1,7 @@
+import { Redis } from "@upstash/redis";
+import { Ratelimit } from "@upstash/ratelimit";
+import { createClient } from "@/lib/supabase/server";
+
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { formatInspirationPrompt } from "@/lib/inspirationPrompts";
@@ -8,6 +12,13 @@ import {
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+});
+const redis = Redis.fromEnv();
+
+const recruitmentRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(100, "24 h"),
+  prefix: "npc-recruitment",
 });
 
 type GeneratedNpc = {
@@ -42,10 +53,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const requestedCount = Math.min(
-  4,
-  Math.max(1, Math.floor(body.count ?? 4)),
-);
+    const requestedCount = 4;
 
     const basePrompt = buildNpcGenerationPrompt({
   ...body,
@@ -54,6 +62,41 @@ export async function POST(request: Request) {
     ? body.existingNames
     : [],
 });
+
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "You must be signed in to recruit NPCs." },
+        { status: 401 },
+      );
+    }
+
+    const rateLimit = await recruitmentRateLimit.limit(
+      user.id,
+    );
+
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        {
+          error:
+            "You have reached today's recruitment limit. Please try again later.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil(
+              (rateLimit.reset - Date.now()) / 1000,
+            ).toString(),
+          },
+        },
+      );
+    }
 
 const inspirationGuidance =
   formatInspirationPrompt(body.inspiration);

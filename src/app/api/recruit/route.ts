@@ -1,5 +1,3 @@
-import { Redis } from "@upstash/redis";
-import { Ratelimit } from "@upstash/ratelimit";
 import { createClient } from "@/lib/supabase/server";
 
 import OpenAI from "openai";
@@ -12,13 +10,6 @@ import {
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-});
-const redis = Redis.fromEnv();
-
-const recruitmentRateLimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(100, "24 h"),
-  prefix: "npc-recruitment",
 });
 
 type GeneratedNpc = {
@@ -77,26 +68,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const rateLimit = await recruitmentRateLimit.limit(
-      user.id,
-    );
-
-    if (!rateLimit.success) {
-      return NextResponse.json(
-        {
-          error:
-            "You have reached today's recruitment limit. Please try again later.",
-        },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": Math.ceil(
-              (rateLimit.reset - Date.now()) / 1000,
-            ).toString(),
-          },
-        },
-      );
-    }
+    
 
 const inspirationGuidance =
   formatInspirationPrompt(body.inspiration);

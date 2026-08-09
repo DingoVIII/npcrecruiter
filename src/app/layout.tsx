@@ -66,10 +66,10 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: "/logo/npc-icon.png",
-    shortcut: "/logo/npc-icon.png",
-    apple: "/logo/npc-icon.png",
-  },
+  icon: "/favicon.ico",
+  shortcut: "/favicon.ico",
+  apple: "/logo/npc-icon.png",
+},
 };
 
 export default function RootLayout({

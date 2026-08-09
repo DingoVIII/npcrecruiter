@@ -2085,11 +2085,7 @@ function EmptyRoster() {
           <span className="pointer-events-none absolute bottom-[6px] left-[6px] z-20 h-3 w-3 border-b-2 border-l-2 border-[#8f713b]" />
           <span className="pointer-events-none absolute bottom-[6px] right-[6px] z-20 h-3 w-3 border-b-2 border-r-2 border-[#8f713b]" />
 
-          <span className="absolute left-2 top-2 z-30 flex h-7 w-7 items-center justify-center rounded-full bg-[#292720] font-serif text-sm font-bold text-white">
-            {index + 1}
-          </span>
-
-          <div className="flex h-full flex-col items-center justify-center border border-dashed border-[#b7a98d] bg-[#f8f0df] text-center">
+                    <div className="flex h-full flex-col items-center justify-center border border-dashed border-[#b7a98d] bg-[#f8f0df] text-center">
             <div className="flex h-12 w-12 items-center justify-center border border-[#b89d67] bg-[#f3e4c5] font-serif text-xl text-[#5d4b31]">
               ?
             </div>
@@ -2131,11 +2127,7 @@ function PortraitSlot({
       <span className="pointer-events-none absolute bottom-[6px] left-[6px] z-20 h-3 w-3 border-b-2 border-l-2 border-[#8f713b]" />
       <span className="pointer-events-none absolute bottom-[6px] right-[6px] z-20 h-3 w-3 border-b-2 border-r-2 border-[#8f713b]" />
 
-      <span className="absolute left-2 top-2 z-30 flex h-7 w-7 items-center justify-center rounded-full bg-[#292720] font-serif text-sm font-bold text-white">
-        {number}
-      </span>
-
-            {portraitUrl ? (
+                  {portraitUrl ? (
         <img
           src={portraitUrl}
           alt={`Portrait of ${name ?? `NPC ${number}`}`}

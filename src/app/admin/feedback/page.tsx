@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 
-import { GuildmasterDashboard } from "@/components/admin/GuildmasterDashboard";
+import { GuildmasterFeedbackInbox } from "@/components/admin/GuildmasterFeedbackInbox";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 
 export const dynamic = "force-dynamic";
 
-export default async function GuildmasterDashboardPage() {
+export default async function GuildmasterFeedbackPage() {
   const admin = await requireAdmin();
 
   if (!admin.authorized) {
@@ -16,5 +16,5 @@ export default async function GuildmasterDashboardPage() {
     redirect("/");
   }
 
-  return <GuildmasterDashboard />;
+  return <GuildmasterFeedbackInbox />;
 }

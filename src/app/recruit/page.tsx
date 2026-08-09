@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { generatePrintableCast } from "@/lib/pdf/printableCast";
 import { createClient } from "@/lib/supabase/client";
+import { GuildFeedback } from "@/components/feedback/GuildFeedback";
 
 type Npc = {
   name: string;
@@ -1411,6 +1412,8 @@ async function startTokenCheckout(
                 Downloads a single-page foldable PDF when all portraits are ready.
               </p>
             </LedgerSection>
+
+            <GuildFeedback />
 
             {errorMessage && (
               <div className="mt-3 border border-[#9b3c2e] bg-[#2c1713] px-3 py-2 text-sm text-[#f0b0a6]">

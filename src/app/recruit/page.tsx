@@ -1413,13 +1413,13 @@ async function startTokenCheckout(
               </p>
             </LedgerSection>
 
-            <GuildFeedback />
-
             {errorMessage && (
-              <div className="mt-3 border border-[#9b3c2e] bg-[#2c1713] px-3 py-2 text-sm text-[#f0b0a6]">
-                {errorMessage}
-              </div>
-            )}
+  <div className="mt-3 border border-[#9b3c2e] bg-[#2c1713] px-3 py-2 text-sm text-[#f0b0a6]">
+    {errorMessage}
+  </div>
+)}
+
+<GuildFeedback />
           </div>
         </aside>
 

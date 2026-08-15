@@ -20,7 +20,12 @@ type DashboardData = {
     estimatedPortraitBatchCost: number;
   };
   metrics: {
-    totalUsers: number;
+  uniqueVisitors: number;
+  totalPageViews: number;
+  landingVisitors: number;
+  recruitVisitors: number;
+  landingToRecruitPercent: number;
+  totalUsers: number;
     signups7d: number;
     signups30d: number;
     savedCasts: number;
@@ -260,14 +265,44 @@ export function GuildmasterDashboard() {
             previously loaded ledger.
           </div>
         )}
+          <section className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+  <MetricCard
+    eyebrow="Unique Visitors"
+    value={whole.format(m.uniqueVisitors)}
+    detail={`${whole.format(m.totalPageViews)} total page views`}
+    accent="gold"
+  />
 
+  <MetricCard
+    eyebrow="Landing Page"
+    value={whole.format(m.landingVisitors)}
+    detail="Unique visitors to npcrecruiter.com"
+    accent="gold"
+  />
+
+  <MetricCard
+    eyebrow="Recruit Page"
+    value={whole.format(m.recruitVisitors)}
+    detail="Unique visitors to /recruit"
+    accent="green"
+  />
+
+  <MetricCard
+    eyebrow="Landing → Recruit"
+    value={`${m.landingToRecruitPercent}%`}
+    detail="Visitors who progressed to recruiting"
+    accent="green"
+  />
+
+  <MetricCard
+    eyebrow="Guild Members"
+    value={whole.format(m.totalUsers)}
+    detail={`+${m.signups7d} in 7 days · +${m.signups30d} in 30`}
+    accent="gold"
+  />
+</section>
         <section className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard
-            eyebrow="Guild Members"
-            value={whole.format(m.totalUsers)}
-            detail={`+${m.signups7d} in 7 days · +${m.signups30d} in 30`}
-            accent="gold"
-          />
+          
           <MetricCard
             eyebrow="Portrait Customers"
             value={whole.format(m.portraitCustomers)}

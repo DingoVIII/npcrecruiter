@@ -229,12 +229,13 @@ export async function GET() {
     const since30 = isoDaysAgo(30);
 
     const [
-      users,
-      castsResult,
-      jobsResult,
-      transactionsResult,
-      accountsResult,
-    ] = await Promise.all([
+  users,
+  castsResult,
+  jobsResult,
+  transactionsResult,
+  accountsResult,
+  visitsResult,
+] = await Promise.all([
       listAllUsers(),
       supabaseAdmin
         .from("casts")
@@ -255,8 +256,12 @@ export async function GET() {
         )
         .order("created_at", { ascending: false }),
       supabaseAdmin
-        .from("guild_token_accounts")
-        .select("user_id, balance"),
+  .from("guild_token_accounts")
+  .select("user_id, balance"),
+supabaseAdmin
+  .from("site_visits")
+  .select("visitor_id, page, created_at")
+  .order("created_at", { ascending: false }),
     ]);
 
     if (castsResult.error) {
@@ -274,6 +279,9 @@ export async function GET() {
     if (accountsResult.error) {
       throw accountsResult.error;
     }
+    if (visitsResult.error) {
+  throw visitsResult.error;
+    }
 
     const casts = (castsResult.data ?? []) as CastRow[];
     const jobs = (jobsResult.data ?? []) as PortraitJob[];
@@ -281,7 +289,32 @@ export async function GET() {
       (transactionsResult.data ?? []) as GuildTransaction[];
     const accounts =
       (accountsResult.data ?? []) as TokenAccount[];
+    const visits = visitsResult.data ?? [];
 
+const uniqueVisitors = new Set(
+  visits.map((visit) => visit.visitor_id),
+).size;
+
+const landingVisitors = new Set(
+  visits
+    .filter((visit) => visit.page === "/")
+    .map((visit) => visit.visitor_id),
+).size;
+
+const recruitVisitors = new Set(
+  visits
+    .filter((visit) => visit.page === "/recruit")
+    .map((visit) => visit.visitor_id),
+).size;
+
+const totalPageViews = visits.length;
+
+const landingToRecruitPercent =
+  landingVisitors > 0
+    ? Number(
+        ((recruitVisitors / landingVisitors) * 100).toFixed(1),
+      )
+    : 0;
     const completedPortraitSets = jobs.filter(
       (job) => job.status === "completed" && !job.is_reroll,
     );
@@ -455,7 +488,12 @@ export async function GET() {
         estimatedPortraitBatchCost,
       },
       metrics: {
-        totalUsers: users.length,
+  uniqueVisitors,
+  totalPageViews,
+  landingVisitors,
+  recruitVisitors,
+  landingToRecruitPercent,
+  totalUsers: users.length,
         signups7d: countAfter(
           users,
           (user) => user.created_at,

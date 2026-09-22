@@ -19,6 +19,7 @@ import styles from "./quest-giver.module.css";
 
 type Npc = { name: string; gender: string; species: string; occupation: string; appearance: string[]; personality: string; roleplayingCue: string; portraitPrompt: string; portraitUrl?: string };
 type Pending = { npc: Npc; questHook: string; fullQuest: string };
+const displayLabel = (value: string) => value.replace(/\b[a-z]/g, letter => letter.toUpperCase());
 const slug = (value: string) => value.replace(/[^a-z0-9-]/gi, "-");
 
 function downloadText(name: string, content: string) {
@@ -81,9 +82,9 @@ export default function QuestGiverPage() {
       }).catch(() => {});
     } else if (prefill) {
       try {
-        const value = JSON.parse(prefill) as { npc: Npc };
+        const value = JSON.parse(prefill) as { npc: Npc; questHook?: string };
         setNpc(value.npc);
-        setQuestHook("");
+        setQuestHook(value.questHook ?? "");
         setFullQuest("");
         setAdventureTitle("Your adventure");
         setPrefilled(true);
@@ -157,7 +158,7 @@ export default function QuestGiverPage() {
   function download() {
     if (!npc) return;
     const savedQuest = fullQuest ? withAdventureTitle(fullQuest, adventureTitle) : fullQuest;
-    downloadText(npc.name, `${npc.name}\n${npc.gender} ${npc.species} | ${npc.occupation}\nAppearance: ${npc.appearance?.join(", ")}\nPersonality: ${npc.personality}\nRoleplaying cue: ${npc.roleplayingCue}\nPortrait prompt: ${npc.portraitPrompt}\n\nQuest hook: ${questHook}\n\n${savedQuest}`);
+    downloadText(npc.name, `${npc.name}\n${displayLabel(npc.gender)} ${displayLabel(npc.species)} | ${npc.occupation}\nAppearance: ${npc.appearance?.join(", ")}\nPersonality: ${npc.personality}\nRoleplaying cue: ${npc.roleplayingCue}\nPortrait prompt: ${npc.portraitPrompt}\n\nQuest hook: ${questHook}\n\n${savedQuest}`);
   }
   async function developQuest() {
     if (!npc || fullQuest || busy) return;
@@ -201,7 +202,7 @@ export default function QuestGiverPage() {
       {npc ? <div className={styles.workspace}>
         <aside className={styles.character} aria-label="Quest giver character">
           <div className={styles.sectionLabel}>✦ YOUR QUEST GIVER <span>01 / CHARACTER</span></div>
-          <div className={styles.characterHeading}><div className={styles.nameRule}>✦ ✦ ✦</div><h2>{npc.name}</h2><p className={styles.subtitle}>{npc.gender} {npc.species} <span>·</span> {npc.occupation}</p></div>
+          <div className={styles.characterHeading}><div className={styles.nameRule}>✦ ✦ ✦</div><h2>{npc.name}</h2><p className={styles.subtitle}>{displayLabel(npc.gender)} {displayLabel(npc.species)} <span>·</span> {npc.occupation}</p></div>
           <div className={styles.portraitFrame}>
             {npc.portraitUrl ? <img className={styles.portrait} src={npc.portraitUrl} alt={`Portrait of ${npc.name}`} /> : <div className={styles.portraitPlaceholder}><span className={styles.sigil}>✧</span><span className={styles.portraitOverline}>A FACE FOR THE LEGEND</span><p>Every story deserves<br />a face to remember.</p><div className={styles.portraitStyleButtons}>{portraitStyles.map(style => <button key={style} disabled={busy} onClick={() => commissionPortrait(style)} className={styles.portraitButton}>{style}<span>2 Guild Tokens</span></button>)}</div></div>}
             <span className={styles.cornerTL}>✦</span><span className={styles.cornerTR}>✦</span><span className={styles.cornerBL}>✦</span><span className={styles.cornerBR}>✦</span>

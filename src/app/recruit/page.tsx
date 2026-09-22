@@ -14,6 +14,8 @@ import {
   QUEST_GIVER_PREFILL_KEY,
 } from "@/lib/anonymous/pending";
 
+const displayLabel = (value: string) => value.replace(/\b[a-z]/g, letter => letter.toUpperCase());
+
 type Npc = {
   name: string;
   gender: string;
@@ -1161,7 +1163,7 @@ function downloadEntireCast() {
   if (npcs.length !== 4) return;
   const content = npcs.map((npc, index) => [
     `NPC ${index + 1}: ${npc.name}`,
-    `${npc.gender} ${npc.species} | ${npc.occupation}`,
+    `${displayLabel(npc.gender)} ${displayLabel(npc.species)} | ${npc.occupation}`,
     `Appearance: ${npc.appearance.join(", ")}`,
     `Personality: ${npc.personality}`,
     `Roleplaying cue: ${npc.roleplayingCue}`,
@@ -1530,7 +1532,7 @@ function downloadEntireCast() {
             editable={!locked && !isGeneratingPortraits}
             onUpdate={(updatedNpc) => updateNpc(index, updatedNpc)}
             onQuestGiver={() => {
-              sessionStorage.setItem(QUEST_GIVER_PREFILL_KEY, JSON.stringify({ npc }));
+              sessionStorage.setItem(QUEST_GIVER_PREFILL_KEY, JSON.stringify({ npc, questHook: npc.questHook ?? "" }));
               window.location.href = "/quest-giver";
             }}
             refreshAction={action}
@@ -1772,7 +1774,7 @@ function CompactNpcCard({
         </h3>
 
         <p className="mt-1 text-[11px] text-[#625744]">
-          {npc.gender} · {npc.species}
+          {displayLabel(npc.gender)} · {displayLabel(npc.species)}
         </p>
       </div>
 

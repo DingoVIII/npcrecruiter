@@ -1,5 +1,3 @@
-import { createClient } from "@/lib/supabase/server";
-import { freeAllowance } from "@/lib/anonymous/allowance";
 
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
@@ -59,18 +57,6 @@ export async function POST(request: Request) {
     ? body.existingQuestHooks.filter((hook): hook is string => typeof hook === "string").slice(0, 20).map((hook) => hook.slice(0, 500))
     : [],
 });
-
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      const allowance = await freeAllowance(request, "cast", true);
-      if (!allowance.ok) return NextResponse.json({ error: allowance.error, remaining: allowance.remaining }, { status: allowance.error?.includes("used up") ? 429 : 503 });
-    }
 
 const inspirationGuidance =
   formatInspirationPrompt(body.inspiration);

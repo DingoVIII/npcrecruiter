@@ -43,8 +43,8 @@ export default async function HomePage() {
         </Link>
 
         <section className="mt-8 grid w-full max-w-5xl gap-4 sm:grid-cols-2">
-          <Link href="/recruit" className="border border-[#b88a32] bg-[#20170d] p-6 text-center"><h2 className="font-serif text-2xl">NPC Recruiter</h2><p className="mt-2">Recruit four characters at once. Three free casts daily without an account.</p></Link>
-          <Link href="/quest-giver" className="border border-[#b88a32] bg-[#20170d] p-6 text-center"><h2 className="font-serif text-2xl">Quest Giver</h2><p className="mt-2">Create one memorable NPC and a free quest hook. Eight free characters daily without an account.</p></Link>
+          <Link href="/recruit" className="border border-[#b88a32] bg-[#20170d] p-6 text-center"><h2 className="font-serif text-2xl">NPC Recruiter</h2><p className="mt-2">Create individual NPCs or a complete cast, free without an account.</p></Link>
+          <Link href="/quest-giver" className="border border-[#b88a32] bg-[#20170d] p-6 text-center"><h2 className="font-serif text-2xl">Quest Giver</h2><p className="mt-2">Create a memorable NPC and quest hook, free without an account.</p></Link>
         </section>
         {/* How it works */}
         <section className="mt-10 grid w-full max-w-[1800px] gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -209,7 +209,6 @@ export default function Home() {
 const [saveMessage, setSaveMessage] = useState("");
   const [guildName, setGuildName] = useState<string | null>(null);
 const [authChecked, setAuthChecked] = useState(false);
-const [freeRemaining, setFreeRemaining] = useState<number | null>(null);
 
 const [guildTokens, setGuildTokens] = useState(0);
 const [guildLedger, setGuildLedger] = useState<
@@ -229,7 +228,6 @@ const [isGuildLedgerOpen, setIsGuildLedgerOpen] =
   useEffect(() => {
     const previous = sessionStorage.getItem("npc-recruiter-cast-session");
     if (previous) { try { setNpcs((JSON.parse(previous) as Npc[]).map(npc => ({ ...npc, hired: true, confirmed: npc.confirmed === true }))); } catch {} }
-    void fetch("/api/allowance").then(r => r.json()).then(data => setFreeRemaining(data.cast?.remaining ?? null)).catch(() => {});
   }, []);
   useEffect(() => { sessionStorage.setItem("npc-recruiter-cast-session", JSON.stringify(npcs)); }, [npcs]);
 
@@ -530,7 +528,6 @@ function updateNpc(index: number, updatedNpc: Npc) {
 
       const result = (await response.json()) as RecruitResponse;
 
-      setFreeRemaining((remaining) => remaining === null ? null : Math.max(0, remaining - 1));
       const candidate = result.npcs[0];
       if (!candidate) throw new Error("No candidate was returned.");
       setNpcs(current => {
@@ -557,17 +554,51 @@ function updateNpc(index: number, updatedNpc: Npc) {
   async function refreshAllCharacters() {
     if (isRecruiting || isRefreshingAll || isGeneratingPortraits || !hasSpecies ||
         npcs.some((npc) => Boolean(npc?.portraitUrl))) return;
-    const count = 4;
-    if (!window.confirm(`Refresh all four character slots? This uses ${count} text generations and replaces the current cast.`)) return;
+    const recruitmentSpecies = getRecruitmentSpecies();
+    if (!recruitmentSpecies.length) return;
+    if (location === "Custom" && !customLocation.trim()) {
+      setErrorMessage("Please describe your custom location."); return;
+    }
+    if (inspiration === "Custom" && !customInspiration.trim()) {
+      setErrorMessage("Please describe your custom inspiration."); return;
+    }
+    if (gender === "Custom" && !customGender.trim()) {
+      setErrorMessage("Please describe your preferred gender mix."); return;
+    }
+    if (!window.confirm("Refresh all four character slots? This replaces the current cast.")) return;
     setIsRefreshingAll(true);
+    setIsRecruiting(true);
+    setErrorMessage("");
     try {
-      // Sequential requests avoid racing the anonymous allowance and let each
-      // new hook take the preceding generated characters into account.
-      for (let index = 0; index < 4; index += 1) {
-        const success = await recruitNpcs(index);
-        if (!success) break;
+      // One API request creates a coherent four-character cast, rather than
+      // making four sequential calls and displaying characters one by one.
+      const response = await fetch("/api/recruit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          location: location === "Custom" ? customLocation.trim() : location,
+          inspiration: inspiration === "Custom" ? customInspiration.trim() : inspiration,
+          species: recruitmentSpecies,
+          genderMix: gender === "Custom" ? customGender.trim() : gender,
+          count: 4,
+          includeQuestHook: true,
+        }),
+      });
+      if (!response.ok) {
+        const details = (await response.json()) as { error?: string };
+        throw new Error(details.error ?? "The recruiter could not refresh the cast.");
       }
+      const result = (await response.json()) as RecruitResponse;
+      if (!Array.isArray(result.npcs) || result.npcs.length !== 4) {
+        throw new Error("The recruiter did not return all four characters.");
+      }
+      setNpcs(result.npcs.map((npc) => ({ ...npc, hired: true, confirmed: false })));
+      trackEvent("npc_generation_completed", { location, inspiration, gender });
+    } catch (error) {
+      console.error("Cast refresh failed:", error);
+      setErrorMessage(error instanceof Error ? error.message : "The recruiter could not refresh the cast.");
     } finally {
+      setIsRecruiting(false);
       setIsRefreshingAll(false);
     }
   }
@@ -1442,16 +1473,16 @@ function downloadEntireCast() {
           <CreamHeading
             title="Candidate Roster"
             subtitle={`${npcs.filter(Boolean).length} of 4 characters created. Build your cast one character at a time.`}
-            trailing={!guildName ? `Text recruitment · ${freeRemaining ?? "…"} free generations remaining today` : "Text recruitment · Create one character at a time"}
+            trailing="Free text recruitment · Create one character at a time"
           />
 
           <div className="flex min-h-0 flex-1 flex-col px-5 pt-5 pb-4">
             <div className="mb-3 grid shrink-0 grid-cols-3 gap-2">
               <button type="button" onClick={() => void refreshAllCharacters()}
                 disabled={!hasSpecies || isRecruiting || isRefreshingAll || isGeneratingPortraits || npcs.some((npc) => Boolean(npc?.portraitUrl))}
-                title="Replaces all four characters; uses four text generations"
+                title="Replaces all four characters in one generation"
                 className="col-span-3 border border-[#7e2518] bg-[#8f2e1d] px-2 py-3 text-[9px] font-bold uppercase leading-tight tracking-[0.06em] text-white transition hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]">
-                {isRefreshingAll ? "Refreshing all characters..." : "Refresh All Characters · 4 Generations"}
+                {isRefreshingAll ? "Refreshing all characters..." : "Refresh All Characters"}
               </button>
             </div>
   <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:#8d6b2c_#17110c] [scrollbar-width:thin]">

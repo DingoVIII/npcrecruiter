@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import { freeAllowance } from "@/lib/anonymous/allowance";
-export async function GET(request: Request) {
-  const [cast, questGiver] = await Promise.all([
-    freeAllowance(request, "cast"), freeAllowance(request, "quest-giver"),
-  ]);
-  return NextResponse.json({ cast, questGiver }, { headers: { "Cache-Control": "no-store" } });
+
+// Text generation is unrestricted during the current open trial.
+export async function GET() {
+  return NextResponse.json({ cast: { ok: true, remaining: null }, questGiver: { ok: true, remaining: null } }, { headers: { "Cache-Control": "no-store" } });
 }

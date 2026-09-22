@@ -53,7 +53,6 @@ export default function QuestGiverPage() {
   const [npc, setNpc] = useState<Npc | null>(null);
   const [questHook, setQuestHook] = useState("");
   const [fullQuest, setFullQuest] = useState("");
-  const [remaining, setRemaining] = useState<number | null>(null);
   const [signedIn, setSignedIn] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -96,7 +95,6 @@ export default function QuestGiverPage() {
       if (saved) { try { const value = JSON.parse(saved) as Pending; setNpc(value.npc); setQuestHook(value.questHook); setFullQuest(value.fullQuest); setAdventureTitle(extractAdventureTitle(value.fullQuest)); setShowOptions(false); } catch {} }
     }
     void createClient().auth.getUser().then(({ data }) => setSignedIn(Boolean(data.user)));
-    void fetch("/api/allowance").then(r => r.json()).then(data => setRemaining(data.questGiver?.remaining ?? null)).catch(() => {});
   }, []);
   useEffect(() => { if (npc) sessionStorage.setItem("npc-recruiter-quest-session", JSON.stringify({ npc, questHook, fullQuest })); }, [npc, questHook, fullQuest]);
   useEffect(() => {
@@ -120,7 +118,7 @@ export default function QuestGiverPage() {
     const selectedSpecies = chosenSpecies === "Custom" ? [customSpecies.trim()] : [chosenSpecies];
     if (!selectedSpecies[0]) { setMessage("Describe your custom species first."); return; }
     const data = await api("/api/quest-givers", { location, inspiration, genderMix, species: selectedSpecies });
-    if (data) { trackEvent("quest_giver_character_generated", { location, inspiration, genderMix, species: chosenSpecies }); setNpc(data.npc); setQuestHook(data.questHook); setFullQuest(""); setAdventureTitle("Your adventure"); setEditing(false); setEditingQuest(false); setShowOptions(false); if (typeof data.remaining === "number") setRemaining(data.remaining); }
+    if (data) { trackEvent("quest_giver_character_generated", { location, inspiration, genderMix, species: chosenSpecies }); setNpc(data.npc); setQuestHook(data.questHook); setFullQuest(""); setAdventureTitle("Your adventure"); setEditing(false); setEditingQuest(false); setShowOptions(false); }
   }
   async function generateQuestHook() {
     if (!npc || busy) return;
@@ -186,10 +184,10 @@ export default function QuestGiverPage() {
   return <main className={styles.page}>
     <div className={styles.shell}>
       <header className={styles.header}><div className={styles.eyebrow}>THE GUILDMASTER&apos;S WORKSHOP</div><h1>Quest <em>Giver</em></h1><p>Give a stranger a story. Give your players a reason to care.</p></header>
-      <div className={styles.topBar}><span className={styles.tag}>✧ ONE CHARACTER · ONE ADVENTURE</span><span className={styles.allowance}>{!signedIn ? <>Free quest givers today <strong>{remaining ?? "…"} / 8</strong></> : "Your guild awaits"}</span></div>
+      <div className={styles.topBar}><span className={styles.tag}>✧ ONE CHARACTER · ONE ADVENTURE</span><span className={styles.allowance}>{!signedIn ? "Free text generation · Sign in to save" : "Your guild awaits"}</span></div>
       <section className={styles.generator} aria-label="Create a quest giver">
         <div className={styles.generatorTitle}><div><span className={styles.kicker}>THE SUMMONING</span><h2>Create your character</h2></div>{npc && <button className={styles.textButton} onClick={() => setShowOptions(!showOptions)}>{showOptions ? "Hide options ↑" : "New character options ↓"}</button>}</div>
-        {showOptions && <div className={styles.generatorBody}><div className={styles.options}><label>Location<select value={location} onChange={e => setLocation(e.target.value)}>{locations.map(option => <option key={option}>{option}</option>)}</select></label><label>Cultural / Fantasy Inspiration<select value={inspiration} onChange={e => setInspiration(e.target.value)}>{inspirations.map(option => <option key={option}>{option}</option>)}</select></label><label>Species<select value={chosenSpecies} onChange={e => setChosenSpecies(e.target.value)}>{speciesOptions.map(option => <option key={option}>{option}</option>)}<option>Custom</option></select>{chosenSpecies === "Custom" && <input maxLength={70} placeholder="Custom species" value={customSpecies} onChange={e => setCustomSpecies(e.target.value)} />}</label><label>Gender<select value={genderMix} onChange={e => setGenderMix(e.target.value)}>{genders.map(option => <option key={option}>{option}</option>)}</select></label></div><button className={styles.primaryButton} disabled={busy || (!signedIn && remaining === 0)} onClick={generate}>{busy ? "Working your magic…" : "Generate quest giver ✦"}</button></div>}
+        {showOptions && <div className={styles.generatorBody}><div className={styles.options}><label>Location<select value={location} onChange={e => setLocation(e.target.value)}>{locations.map(option => <option key={option}>{option}</option>)}</select></label><label>Cultural / Fantasy Inspiration<select value={inspiration} onChange={e => setInspiration(e.target.value)}>{inspirations.map(option => <option key={option}>{option}</option>)}</select></label><label>Species<select value={chosenSpecies} onChange={e => setChosenSpecies(e.target.value)}>{speciesOptions.map(option => <option key={option}>{option}</option>)}<option>Custom</option></select>{chosenSpecies === "Custom" && <input maxLength={70} placeholder="Custom species" value={customSpecies} onChange={e => setCustomSpecies(e.target.value)} />}</label><label>Gender<select value={genderMix} onChange={e => setGenderMix(e.target.value)}>{genders.map(option => <option key={option}>{option}</option>)}</select></label></div><button className={styles.primaryButton} disabled={busy} onClick={generate}>{busy ? "Working your magic…" : "Generate quest giver ✦"}</button></div>}
       </section>
       {message && <p role="status" className={styles.notice}>{message}</p>}
       {npc ? <div className={styles.workspace}>

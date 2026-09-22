@@ -25,6 +25,7 @@ type Npc = {
   portraitPrompt: string;
   
   hired?: boolean;
+  confirmed?: boolean;
   questHook?: string;
 
   portraitUrl?: string;
@@ -227,7 +228,7 @@ const [isGuildLedgerOpen, setIsGuildLedgerOpen] =
 
   useEffect(() => {
     const previous = sessionStorage.getItem("npc-recruiter-cast-session");
-    if (previous) { try { setNpcs((JSON.parse(previous) as Npc[]).map(npc => ({ ...npc, hired: true }))); } catch {} }
+    if (previous) { try { setNpcs((JSON.parse(previous) as Npc[]).map(npc => ({ ...npc, hired: true, confirmed: npc.confirmed === true }))); } catch {} }
     void fetch("/api/allowance").then(r => r.json()).then(data => setFreeRemaining(data.cast?.remaining ?? null)).catch(() => {});
   }, []);
   useEffect(() => { sessionStorage.setItem("npc-recruiter-cast-session", JSON.stringify(npcs)); }, [npcs]);
@@ -318,7 +319,7 @@ try {
       setPortraitStyle(
         normalizePortraitStyle(result.cast.portrait_style ?? "Classic Fantasy"),
       );
-      setNpcs((result.cast.npcs ?? []).map((npc: Npc) => ({ ...npc, hired: true })));
+      setNpcs((result.cast.npcs ?? []).map((npc: Npc) => ({ ...npc, hired: true, confirmed: npc.confirmed === true })));
     }
   }
 } catch (error) {
@@ -438,6 +439,13 @@ function togglePortraitApproval(index: number) {
     ),
   );
 }
+function toggleCandidateConfirmation(index: number) {
+  if (isGeneratingPortraits) return;
+  setNpcs((current) => current.map((npc, i) =>
+    i === index && npc ? { ...npc, confirmed: !npc.confirmed } : npc,
+  ));
+}
+
 function updateNpc(index: number, updatedNpc: Npc) {
   setNpcs((current) =>
     current.map((npc, i) =>
@@ -447,6 +455,7 @@ function updateNpc(index: number, updatedNpc: Npc) {
             hired: npc.hired,
             portraitUrl: npc.portraitUrl,
             portraitApproved: npc.portraitApproved,
+            confirmed: npc.portraitUrl ? npc.confirmed : false,
           }
         : npc,
     ),
@@ -526,7 +535,7 @@ function updateNpc(index: number, updatedNpc: Npc) {
       if (!candidate) throw new Error("No candidate was returned.");
       setNpcs(current => {
         const next = [...current];
-        next[slot] = { ...candidate, hired: true };
+        next[slot] = { ...candidate, hired: true, confirmed: false };
         return next;
       });
       return true;
@@ -564,15 +573,37 @@ function updateNpc(index: number, updatedNpc: Npc) {
   }
 
   async function generatePortraits(style: PortraitStyle) {
-  const hiredNpcs = npcs.filter((npc) => npc.hired);
+  const confirmedNpcs = npcs.filter((npc) => npc?.confirmed);
 
-  if (hiredNpcs.length !== 4 || isGeneratingPortraits) {
+  // Keep the existing four-portrait, five-token commission contract.
+  if (confirmedNpcs.length !== 4 || isGeneratingPortraits ||
+      confirmedNpcs.some((npc) => Boolean(npc.portraitUrl))) {
     return;
   }
 
   setIsGeneratingPortraits(true);
+  setErrorMessage("");
 
   try {
+    // The portrait API requires an active cast. Await the latest confirmed
+    // characters instead of racing the background autosave.
+    const activeCastResponse = await fetch("/api/casts/active", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: "Current Cast",
+        location: location === "Custom" ? customLocation.trim() : location,
+        inspiration: inspiration === "Custom" ? customInspiration.trim() : inspiration,
+        genderMix: gender === "Custom" ? customGender.trim() : gender,
+        species: getRecruitmentSpecies(),
+        portraitStyle: style,
+        npcs,
+      }),
+    });
+    if (!activeCastResponse.ok) {
+      const details = await activeCastResponse.json() as { error?: string };
+      throw new Error(details.error ?? "The cast could not be prepared for portrait generation.");
+    }
     const response = await fetch("/api/portraits/jobs", {
       method: "POST",
       headers: {
@@ -581,7 +612,7 @@ function updateNpc(index: number, updatedNpc: Npc) {
       body: JSON.stringify({
   style,
   inspiration,
-  npcs: hiredNpcs,
+  npcs: confirmedNpcs,
 }),
     });
 
@@ -814,7 +845,8 @@ async function replaceUnhiredNpcs() {
     (npc) => !npc.hired,
   ).length;
 
-  const hiredCount = npcs.filter((npc) => npc.hired).length;
+  const hiredCount = npcs.filter((npc) => npc?.hired).length;
+  const confirmedCount = npcs.filter((npc) => npc?.confirmed).length;
 
 const portraitsGenerated = npcs.some((npc) =>
   Boolean(npc.portraitUrl),
@@ -1445,6 +1477,9 @@ function downloadEntireCast() {
               window.location.href = "/quest-giver";
             }}
             refreshAction={action}
+            confirmed={Boolean(npc.confirmed)}
+            onToggleConfirmation={() => toggleCandidateConfirmation(index)}
+            confirmationDisabled={isGeneratingPortraits}
           />
         ) : (
           <div key={index} className="relative flex aspect-[20/23] min-h-0 flex-col border border-dashed border-[#a9946d] bg-[#fff9ec] p-3 text-center">
@@ -1467,7 +1502,7 @@ function downloadEntireCast() {
   <CreamHeading
     title="Portrait Commissions"
     subtitle="Bring your cast to life."
-    trailing="Portraits cost 5 Guild Tokens"
+    trailing={`${confirmedCount}/4 confirmed · 5 Guild Tokens for four portraits`}
   />
 
   <div className="flex min-h-0 flex-1 flex-col px-5 pt-5 pb-4">
@@ -1477,7 +1512,7 @@ function downloadEntireCast() {
           key={style}
           type="button"
           onClick={() => { setPortraitStyle(style); void generatePortraits(style); }}
-          disabled={hiredCount !== 4 || guildTokens < 5 || isGeneratingPortraits}
+          disabled={confirmedCount !== 4 || guildTokens < 5 || isGeneratingPortraits || portraitsGenerated}
           className="border border-[#7e2518] bg-[#8f2e1d] px-2 py-3 text-[9px] font-bold uppercase leading-tight tracking-[0.06em] text-white transition hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]"
         >
           {isGeneratingPortraits ? "Generating..." : style}
@@ -1495,7 +1530,7 @@ function downloadEntireCast() {
               key={index}
               number={index + 1}
               name={npc?.name}
-              ready={Boolean(npc?.hired)}
+              ready={Boolean(npc?.confirmed)}
               portraitUrl={npc?.portraitUrl}
             />
           );
@@ -1586,6 +1621,9 @@ type CompactNpcCardProps = {
   onUpdate: (updatedNpc: Npc) => void;
   onQuestGiver: () => void;
   refreshAction: React.ReactNode;
+  confirmed: boolean;
+  onToggleConfirmation: () => void;
+  confirmationDisabled: boolean;
 };
 
 function CompactNpcCard({
@@ -1595,6 +1633,9 @@ function CompactNpcCard({
   onUpdate,
   onQuestGiver,
   refreshAction,
+  confirmed,
+  onToggleConfirmation,
+  confirmationDisabled,
 }: CompactNpcCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftNpc, setDraftNpc] = useState<Npc>(npc);
@@ -1643,7 +1684,7 @@ function CompactNpcCard({
   return (
     <article
       className={
-        npc.hired
+        confirmed
           ? "relative flex aspect-[20/23] flex-col overflow-hidden border-2 border-[#58705a] bg-[#fff9ec] p-4 shadow-[2px_3px_0_rgba(44,64,46,0.14)]"
           : "relative flex aspect-[20/23] flex-col overflow-hidden border border-[#8f713b] bg-[#fff9ec] p-4 shadow-[2px_3px_0_rgba(72,55,28,0.12)]"
       }
@@ -1659,6 +1700,13 @@ function CompactNpcCard({
       <span className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-[#292720] font-serif text-sm font-bold text-white">
         {number}
       </span>
+      <label className="absolute right-3 top-3 z-30 flex cursor-pointer items-center gap-1.5 rounded-sm bg-[#fff9ec] px-1.5 py-1 text-[10px] font-bold text-[#594628]" title="Confirm this character for portrait generation">
+        <span className="sr-only">Confirm {npc.name} for portrait generation</span>
+        <input type="checkbox" checked={confirmed} disabled={confirmationDisabled}
+          onChange={onToggleConfirmation} aria-label={`Confirm ${npc.name} for portrait generation`}
+          className="h-4 w-4 cursor-pointer accent-[#a98035] disabled:cursor-not-allowed" />
+        <span aria-hidden="true">{confirmed ? "Ready" : "Confirm"}</span>
+      </label>
 
       <div className="mt-7 min-h-0 flex-1 overflow-y-auto [scrollbar-width:thin]">
       <div className="mt-7 text-center">

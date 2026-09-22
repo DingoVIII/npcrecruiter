@@ -6,6 +6,12 @@ import Image from "next/image";
 import { generatePrintableCast } from "@/lib/pdf/printableCast";
 import { createClient } from "@/lib/supabase/client";
 import { GuildFeedback } from "@/components/feedback/GuildFeedback";
+import { trackEvent } from "@/lib/analytics";
+import { genders, inspirations, locations, speciesOptions } from "@/lib/generationOptions";
+import {
+  PENDING_NPC_KEY,
+  QUEST_GIVER_PREFILL_KEY,
+} from "@/lib/anonymous/pending";
 
 type Npc = {
   name: string;
@@ -27,26 +33,8 @@ type RecruitResponse = {
   npcs: Npc[];
 };
 
-const speciesOptions = [
-  "Human",
-  "Orc",
-  "Elf",
-  "Half-Orc",
-  "Dwarf",
-  "Goblin",
-  "Halfling",
-  "Hobgoblin",
-  "Gnome",
-  "Bugbear",
-  "Half-Elf",
-  "Kobold",
-  "Dragonborn",
-  "Tiefling",
-  "Goliath",
-  "Aasimar",
-];
-
-const locations = [
+/* shared generation options */
+/*
   "Any",
   "Tavern",
   "Inn",
@@ -186,7 +174,7 @@ const genders = [
   "Androgynous",
   "Non-binary",
   "Custom",
-];
+]; */
 
 const portraitStyles = [
   "Fantasy",
@@ -222,6 +210,8 @@ export default function Home() {
 const [saveMessage, setSaveMessage] = useState("");
   const [guildName, setGuildName] = useState<string | null>(null);
 const [authChecked, setAuthChecked] = useState(false);
+const [freeRemaining, setFreeRemaining] = useState<number | null>(null);
+const [pendingSave, setPendingSave] = useState(false);
 
 const [guildTokens, setGuildTokens] = useState(0);
 const [guildLedger, setGuildLedger] = useState<
@@ -237,11 +227,13 @@ const [guildLedger, setGuildLedger] = useState<
 const [isGuildLedgerOpen, setIsGuildLedgerOpen] =
   useState(false);
 
-const [isTreasuryOpen, setIsTreasuryOpen] =
-  useState(false);
 
-const [isStartingCheckout, setIsStartingCheckout] =
-  useState(false);
+  useEffect(() => {
+    const previous = sessionStorage.getItem("npc-recruiter-cast-session");
+    if (previous) { try { setNpcs(JSON.parse(previous) as Npc[]); } catch {} }
+    void fetch("/api/allowance").then(r => r.json()).then(data => setFreeRemaining(data.cast?.remaining ?? null)).catch(() => {});
+  }, []);
+  useEffect(() => { if (npcs.length) sessionStorage.setItem("npc-recruiter-cast-session", JSON.stringify(npcs)); }, [npcs]);
 
   useEffect(() => {
   const savedPortraitStyle =
@@ -275,6 +267,16 @@ setGuildName(
 );
 
 if (session?.user) {
+  const pending = sessionStorage.getItem(PENDING_NPC_KEY);
+  if (pending) {
+    try {
+      const value = JSON.parse(pending);
+      const response = await fetch("/api/npcs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(value) });
+      const result = await response.json();
+      if (response.ok) { sessionStorage.removeItem(PENDING_NPC_KEY); setSaveMessage(result.message); }
+      else setSaveMessage(result.error || "Could not save selected NPC.");
+    } catch { setSaveMessage("Could not restore selected NPC."); }
+  }
   const { data, error } = await supabase
     .from("guild_token_accounts")
     .select("balance")
@@ -515,6 +517,7 @@ function updateNpc(index: number, updatedNpc: Npc) {
               : gender,
         }),
       });
+      if (response.ok) trackEvent("npc_generation_completed", { location, inspiration, gender });
 
       if (!response.ok) {
         const errorResult = (await response.json()) as {
@@ -529,6 +532,7 @@ function updateNpc(index: number, updatedNpc: Npc) {
 
       const result = (await response.json()) as RecruitResponse;
 
+      if (typeof freeRemaining === "number") setFreeRemaining(Math.max(0, freeRemaining - 1));
       setNpcs(
   result.npcs.slice(0, 4).map((npc) => ({
     ...npc,
@@ -591,6 +595,7 @@ if (!response.ok) {
 }
 
 setPortraitJobId(result.jobId);
+trackEvent("portrait_commission_requested", { portraitStyle });
     } catch (error) {
     console.error("Portrait generation failed:", error);
 
@@ -814,7 +819,7 @@ const unwantedPortraitCount = npcs.filter(
   }
 
   if (!guildName) {
-    window.location.href = "/login";
+    window.location.href = "/login?next=/recruit";
     return;
   }
 
@@ -878,6 +883,7 @@ const unwantedPortraitCount = npcs.filter(
     setSaveMessage(
       result.message ?? "Cast saved to the Guild Archive.",
     );
+    trackEvent("cast_saved", { castSize: npcs.length });
   } catch (error) {
     setErrorMessage(
       error instanceof Error
@@ -1046,59 +1052,13 @@ async function downloadPrintableCast() {
     setErrorMessage("");
 
     await generatePrintableCast(npcs);
+    trackEvent("npc_downloaded", { format: "printable_cast" });
   } catch (error) {
     setErrorMessage(
       error instanceof Error
         ? error.message
         : "The printable cast could not be created.",
     );
-  }
-}
-
-async function startTokenCheckout(
-  pack: "starter" | "adventurer" | "guildmaster",
-) {
-  if (isStartingCheckout) {
-    return;
-  }
-
-  setIsStartingCheckout(true);
-  setErrorMessage("");
-
-  try {
-    const response = await fetch(
-      "/api/stripe/create-checkout-session",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ pack }),
-      },
-    );
-
-    const result = (await response.json()) as {
-      url?: string;
-      error?: string;
-    };
-
-    if (!response.ok || !result.url) {
-      throw new Error(
-        result.error ??
-          "The Guild Treasury could not open checkout.",
-      );
-    }
-
-    window.location.href = result.url;
-  } catch (error) {
-    setErrorMessage(
-      error instanceof Error
-        ? error.message
-        : "The Guild Treasury could not open checkout.",
-    );
-
-    setIsTreasuryOpen(false);
-    setIsStartingCheckout(false);
   }
 }
 
@@ -1164,7 +1124,7 @@ async function startTokenCheckout(
 
 <button
   type="button"
-  onClick={() => setIsTreasuryOpen(true)}
+  onClick={() => window.dispatchEvent(new Event("open-guild-treasury"))}
   className="mt-3 w-full rounded-sm border border-[#c49a46] bg-[linear-gradient(180deg,#c49a46_0%,#a67b2d_100%)] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.08em] text-[#22170d] transition hover:brightness-110"
 >
   Buy Guild Tokens
@@ -1381,6 +1341,20 @@ async function startTokenCheckout(
                       ? "Save Cast to My Account"
                       : "Join the Guild to Save Cast"}
                 </button>
+                {npcs.length > 0 && <div className="space-y-2 border border-[#8d6b2c] p-3">
+                  <p className="text-xs">Save one favourite NPC to your guild for free:</p>
+                  {npcs.map((npc, index) => <button key={`download-${index}`} type="button" className="block w-full border border-[#8d6b2c] p-2 text-left text-xs" onClick={() => {
+                    const content = `${npc.name}\n${npc.gender} ${npc.species} | ${npc.occupation}\nAppearance: ${npc.appearance.join(", ")}\nPersonality: ${npc.personality}\nRoleplaying cue: ${npc.roleplayingCue}`;
+                    const url = URL.createObjectURL(new Blob([content], { type: "text/plain" }));
+                    const link = document.createElement("a"); link.href = url; link.download = `${npc.name.replace(/[^a-z0-9-]/gi, "-")}.txt`; link.click(); URL.revokeObjectURL(url);
+                  }}>Download {npc.name} as text</button>)}
+                  {npcs.map((npc, index) => <button key={index} type="button" disabled={pendingSave} className="block w-full border border-[#8d6b2c] p-2 text-left text-xs" onClick={async () => {
+                    if (!guildName) { sessionStorage.setItem(PENDING_NPC_KEY, JSON.stringify({ npc })); window.location.href = "/login?next=/recruit"; return; }
+                    setPendingSave(true);
+                    try { const response = await fetch("/api/npcs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ npc }) }); const result = await response.json(); setSaveMessage(result.message || result.error || "Could not save NPC."); }
+                    finally { setPendingSave(false); }
+                  }}>Save {npc.name}</button>)}
+                </div>}
                 <Link
                   href={guildName ? "/my-casts" : "/login"}
                   className="block w-full rounded-sm border border-[#8d6b2c] bg-[#19140f] px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.08em] text-[#ead7a9] transition hover:bg-[#2c2116]"
@@ -1436,7 +1410,7 @@ async function startTokenCheckout(
     </p>
 
     <div className="flex h-[34px] items-center justify-center border border-[#a9946d] bg-[#fff9ec] px-3 text-center font-serif text-[11px] italic text-[#625744]">
-      Generates four text NPCs. Text recruitment is free.
+      Generates four text NPCs. {!guildName && `Free casts remaining today: ${freeRemaining ?? "checking..."} / 3.`}
     </div>
   </div>
 
@@ -1455,6 +1429,10 @@ async function startTokenCheckout(
     onUpdate={(updatedNpc) =>
       updateNpc(index, updatedNpc)
     }
+    onQuestGiver={() => {
+      sessionStorage.setItem(QUEST_GIVER_PREFILL_KEY, JSON.stringify({ npc }));
+      window.location.href = "/quest-giver";
+    }}
   />
 ))}
       </div>
@@ -1561,87 +1539,10 @@ async function startTokenCheckout(
 
 </div>
 
-{isTreasuryOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-3xl overflow-hidden rounded-[18px] border-2 border-[#8d6b2c] bg-[#f3e5c8] shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#9e834e] bg-[linear-gradient(180deg,#2b2117_0%,#17110c_100%)] px-6 py-4 text-[#ead7a9]">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#b99a59]">
-                  Guild Treasury
-                </p>
-
-                <h2 className="mt-1 font-serif text-2xl font-bold text-[#f3dfaa]">
-                  Purchase Guild Tokens
-                </h2>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsTreasuryOpen(false)}
-                disabled={isStartingCheckout}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-[#8d6b2c] text-lg text-[#ead7a9] transition hover:bg-[#3a2b1c] disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Close Guild Treasury"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="grid gap-4 p-6 md:grid-cols-3">
-              <TokenPackCard
-                title="🥉 Bronze Chest"
-                tokens={20}
-                price="$5.99 USD"
-                description="Perfect for a single adventure."
-                disabled={isStartingCheckout}
-                onPurchase={() =>
-                  startTokenCheckout("starter")
-                }
-              />
-
-              <TokenPackCard
-                title="🥈 Iron Strongbox"
-                tokens={75}
-                price="$19.99 USD"
-                description="Ideal for ongoing campaigns."
-                featured
-                disabled={isStartingCheckout}
-                onPurchase={() =>
-                  startTokenCheckout("adventurer")
-                }
-              />
-
-              <TokenPackCard
-                title="🥇 Golden Guild Vault"
-                tokens={200}
-                price="$39.99 USD"
-                description="Best value for worldbuilders and professional GMs."
-                disabled={isStartingCheckout}
-                onPurchase={() =>
-                  startTokenCheckout("guildmaster")
-                }
-              />
-            </div>
-
-            <div className="border-t border-[#b89d67] bg-[#eadbbd] px-6 py-3 text-center font-serif text-xs italic text-[#625744]">
-              Portrait commissions cost 5 Guild Tokens.
-              Individual portrait rerolls cost 1 Guild Token.
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
 
-type TokenPackCardProps = {
-  title: string;
-  tokens: number;
-  price: string;
-  description: string;
-  disabled: boolean;
-  featured?: boolean;
-  onPurchase: () => void;
-};
 type BottomActionBarProps = {
   children: React.ReactNode;
 };
@@ -1655,61 +1556,6 @@ function BottomActionBar({
     </div>
   );
 }
-function TokenPackCard({
-  title,
-  tokens,
-  price,
-  description,
-  disabled,
-  featured = false,
-  onPurchase,
-}: TokenPackCardProps) {
-  return (
-    <article
-      className={
-        featured
-          ? "relative flex flex-col border-2 border-[#8f2e1d] bg-[#fff9ec] p-5 shadow-[3px_4px_0_rgba(72,55,28,0.16)]"
-          : "relative flex flex-col border border-[#a9946d] bg-[#fff9ec] p-5 shadow-[3px_4px_0_rgba(72,55,28,0.12)]"
-      }
-    >
-      {featured && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#8f2e1d] px-3 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-white">
-          Best Value
-        </span>
-      )}
-
-      <h3 className="text-center font-serif text-lg font-bold text-[#292720]">
-        {title}
-      </h3>
-
-      <p className="mt-4 text-center font-serif text-4xl font-bold text-[#8f2e1d]">
-        {tokens}
-      </p>
-
-      <p className="text-center text-[10px] font-bold uppercase tracking-[0.14em] text-[#6d6252]">
-        Guild Tokens
-      </p>
-
-      <p className="mt-4 text-center font-serif text-xl font-bold">
-        {price}
-      </p>
-
-      <p className="mt-3 min-h-10 text-center text-xs leading-5 text-[#625744]">
-        {description}
-      </p>
-
-      <button
-        type="button"
-        onClick={onPurchase}
-        disabled={disabled}
-        className="mt-5 border border-[#7e2518] bg-[#8f2e1d] px-3 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-white transition hover:bg-[#a83a25] disabled:cursor-wait disabled:bg-[#9f8e76]"
-      >
-        {disabled ? "Opening Checkout..." : "Purchase"}
-      </button>
-    </article>
-  );
-}
-
 type LedgerSectionProps = {
   title: string;
   children: React.ReactNode;
@@ -1768,6 +1614,7 @@ type CompactNpcCardProps = {
   editable: boolean;
   onToggleHire: () => void;
   onUpdate: (updatedNpc: Npc) => void;
+  onQuestGiver: () => void;
 };
 
 function CompactNpcCard({
@@ -1776,6 +1623,7 @@ function CompactNpcCard({
   editable,
   onToggleHire,
   onUpdate,
+  onQuestGiver,
 }: CompactNpcCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftNpc, setDraftNpc] = useState<Npc>(npc);
@@ -1930,6 +1778,15 @@ function CompactNpcCard({
           <div className="flex items-center justify-center border border-[#b4a58a] bg-[#e5dac5] px-1 py-2 text-[9px] font-bold uppercase tracking-wide text-[#847762]">
             Text Locked
           </div>
+        )}
+        {npc.hired && (
+          <button
+            type="button"
+            onClick={onQuestGiver}
+            className="col-span-2 border border-[#8f2e1d] bg-[#8f2e1d] px-1 py-2 text-[9px] font-bold uppercase tracking-wide text-white hover:bg-[#a83a25]"
+          >
+            Quest Giver
+          </button>
         )}
       </div>
 

@@ -1,13 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 
 type AuthMode = "sign-in" | "sign-up";
 
-export default function LoginPage() {
+function LoginForm() {
+  const params = useSearchParams();
+  const next = params.get("next");
+  const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
   const router = useRouter();
   const supabase = createClient();
 
@@ -55,7 +60,7 @@ export default function LoginPage() {
         }
 
         if (data.session) {
-          router.push("/");
+          router.push(destination);
           router.refresh();
           return;
         }
@@ -74,7 +79,7 @@ export default function LoginPage() {
         throw error;
       }
 
-      router.push("/");
+      router.push(destination);
       router.refresh();
     } catch (error) {
       setIsError(true);
@@ -235,3 +240,4 @@ export default function LoginPage() {
     </main>
   );
 }
+export default function LoginPage() { return <Suspense fallback={null}><LoginForm /></Suspense>; }

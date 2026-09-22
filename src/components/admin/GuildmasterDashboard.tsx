@@ -48,6 +48,8 @@ type DashboardData = {
     tokensOutstanding: number;
     averageTokensPerBuyer: number;
   };
+  eventCounts: Record<string, number>;
+  featuredPerformance: { id: string; name: string; slug: string; published: boolean; pageViews: number; youtubeClicks: number; downloads: number }[];
   portraitJobStatus: {
     queued: number;
     generating: number;
@@ -234,10 +236,23 @@ export function GuildmasterDashboard() {
 
             <div className="flex flex-wrap gap-2">
               <Link
+                href="/admin/featured"
+                className="rounded-lg border border-[#9c7530] bg-[#23170d] px-4 py-2.5 text-xs font-bold uppercase tracking-[0.11em] text-[#e9d19b] transition hover:bg-[#342313]"
+              >
+                Featured Library
+              </Link>
+              <Link
                 href="/admin/tokens/grant"
                 className="rounded-lg border border-[#9c7530] bg-[#23170d] px-4 py-2.5 text-xs font-bold uppercase tracking-[0.11em] text-[#e9d19b] transition hover:bg-[#342313]"
               >
                 Grant Tokens
+              </Link>
+
+              <Link
+                href="/admin/feedback"
+                className="rounded-lg border border-[#9c7530] bg-[#23170d] px-4 py-2.5 text-xs font-bold uppercase tracking-[0.11em] text-[#e9d19b] transition hover:bg-[#342313]"
+              >
+                Feedback
               </Link>
 
               <Link
@@ -344,6 +359,18 @@ export function GuildmasterDashboard() {
             value={whole.format(m.tokensOutstanding)}
             sub={`${m.averageTokensPerBuyer} avg purchased / buyer`}
           />
+        </section>
+        <section className="mt-4 grid gap-3 lg:grid-cols-2">
+          <div className="rounded-xl border border-[#6e5428] bg-[#20170d] p-5">
+            <h2 className="font-serif text-xl font-bold text-[#f1dfb9]">Generator Activity</h2>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-[#cdbb94]">
+              {Object.entries(data.eventCounts).filter(([name]) => name.includes("generation") || name.includes("download") || name.includes("save") || name.includes("portrait")).slice(0, 10).map(([name, count]) => <div key={name} className="border border-[#6e5428] p-3"><strong className="block text-[#e9c782]">{whole.format(count)}</strong>{name.replaceAll("_", " ")}</div>)}
+            </div>
+          </div>
+          <div className="rounded-xl border border-[#6e5428] bg-[#20170d] p-5">
+            <h2 className="font-serif text-xl font-bold text-[#f1dfb9]">Featured NPC Performance</h2>
+            <div className="mt-4 space-y-2 text-sm text-[#cdbb94]">{data.featuredPerformance.length ? data.featuredPerformance.map((item) => <div key={item.id} className="flex flex-wrap justify-between gap-2 border-b border-[#6e5428] py-2"><span>{item.name}{!item.published && " · unpublished"}</span><span>{item.pageViews} views · {item.youtubeClicks} YouTube · {item.downloads} downloads</span></div>) : <p>No featured NPCs have been published.</p>}</div>
+          </div>
         </section>
 
         <section className="mt-4 grid gap-4 xl:grid-cols-[1.55fr_0.85fr]">

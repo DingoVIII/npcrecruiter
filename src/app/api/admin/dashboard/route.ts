@@ -235,6 +235,8 @@ export async function GET() {
   transactionsResult,
   accountsResult,
   visitsResult,
+  eventsResult,
+  featuredResult,
 ] = await Promise.all([
       listAllUsers(),
       supabaseAdmin
@@ -260,8 +262,16 @@ export async function GET() {
   .select("user_id, balance"),
 supabaseAdmin
   .from("site_visits")
-  .select("visitor_id, page, created_at")
+  .select("visitor_id, session_id, page, created_at")
   .order("created_at", { ascending: false }),
+supabaseAdmin
+  .from("analytics_events")
+  .select("event_name, featured_npc_id, success, created_at")
+  .order("created_at", { ascending: false }),
+supabaseAdmin
+  .from("featured_npcs")
+  .select("id, name, slug, published, display_order")
+  .order("display_order"),
     ]);
 
     if (castsResult.error) {
@@ -282,6 +292,8 @@ supabaseAdmin
     if (visitsResult.error) {
   throw visitsResult.error;
     }
+    if (eventsResult.error) throw eventsResult.error;
+    if (featuredResult.error) throw featuredResult.error;
 
     const casts = (castsResult.data ?? []) as CastRow[];
     const jobs = (jobsResult.data ?? []) as PortraitJob[];
@@ -290,6 +302,18 @@ supabaseAdmin
     const accounts =
       (accountsResult.data ?? []) as TokenAccount[];
     const visits = visitsResult.data ?? [];
+    const analyticsEvents = eventsResult.data ?? [];
+    const featuredNpcs = featuredResult.data ?? [];
+    const eventCounts = analyticsEvents.reduce<Record<string, number>>((counts, event) => { counts[event.event_name] = (counts[event.event_name] ?? 0) + 1; return counts; }, {});
+    const featuredPerformance = featuredNpcs.map((featured) => ({
+      id: featured.id,
+      name: featured.name,
+      slug: featured.slug,
+      published: featured.published,
+      pageViews: analyticsEvents.filter((event) => event.featured_npc_id === featured.id && event.event_name === "featured_page_viewed").length,
+      youtubeClicks: analyticsEvents.filter((event) => event.featured_npc_id === featured.id && event.event_name === "featured_youtube_clicked").length,
+      downloads: analyticsEvents.filter((event) => event.featured_npc_id === featured.id && event.event_name.includes("downloaded")).length,
+    }));
 
 const uniqueVisitors = new Set(
   visits.map((visit) => visit.visitor_id),
@@ -569,6 +593,8 @@ const landingToRecruitPercent =
               )
             : 0,
       },
+      eventCounts,
+      featuredPerformance,
       portraitJobStatus: statusCounts,
       daily: createDailySeries(
         users,

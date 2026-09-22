@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { freeAllowance } from "@/lib/anonymous/allowance";
 
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
@@ -62,13 +63,9 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return NextResponse.json(
-        { error: "You must be signed in to recruit NPCs." },
-        { status: 401 },
-      );
+      const allowance = await freeAllowance(request, "cast", true);
+      if (!allowance.ok) return NextResponse.json({ error: allowance.error, remaining: allowance.remaining }, { status: allowance.error?.includes("used up") ? 429 : 503 });
     }
-
-    
 
 const inspirationGuidance =
   formatInspirationPrompt(body.inspiration);

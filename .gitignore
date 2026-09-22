@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+stripe_backup_code.txt
+*.zip
 
 # debug
 npm-debug.log*

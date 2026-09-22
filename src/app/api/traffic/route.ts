@@ -28,6 +28,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as {
       visitorId?: string;
+      sessionId?: string;
       page?: string;
     };
 
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
       .from("site_visits")
       .insert({
         visitor_id: visitorId,
+        session_id: body.sessionId?.trim().slice(0, 100) || null,
         page,
       });
 

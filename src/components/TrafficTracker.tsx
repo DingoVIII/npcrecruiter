@@ -3,8 +3,6 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
-const TRACKED_PAGES = ["/", "/recruit"];
-
 function getVisitorId() {
   const storageKey = "npc-recruiter-visitor-id";
 
@@ -18,14 +16,17 @@ function getVisitorId() {
   return visitorId;
 }
 
+function getSessionId() {
+  const storageKey = "npc-recruiter-session-id";
+  let sessionId = sessionStorage.getItem(storageKey);
+  if (!sessionId) { sessionId = crypto.randomUUID(); sessionStorage.setItem(storageKey, sessionId); }
+  return sessionId;
+}
+
 export default function TrafficTracker() {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!TRACKED_PAGES.includes(pathname)) {
-      return;
-    }
-
     const visitorId = getVisitorId();
 
     fetch("/api/traffic", {
@@ -35,6 +36,7 @@ export default function TrafficTracker() {
       },
       body: JSON.stringify({
         visitorId,
+        sessionId: getSessionId(),
         page: pathname,
       }),
     }).catch(() => {

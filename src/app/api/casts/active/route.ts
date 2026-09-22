@@ -294,3 +294,26 @@ export async function POST(request: Request) {
     );
   }
 }
+// A fresh recruitment should not restore the previous signed-in cast.
+// Deactivation preserves the row and never touches the user's saved casts or tokens.
+export async function DELETE() {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) return NextResponse.json({ cleared: true });
+
+    const { error } = await supabase
+      .from("casts")
+      .update({ is_active: false })
+      .eq("user_id", user.id)
+      .eq("is_active", true);
+    if (error) {
+      console.error("Active cast reset failed:", error);
+      return NextResponse.json({ error: "The active cast could not be cleared." }, { status: 500 });
+    }
+    return NextResponse.json({ cleared: true });
+  } catch (error) {
+    console.error("Active cast DELETE failed:", error);
+    return NextResponse.json({ error: "The active cast could not be cleared." }, { status: 500 });
+  }
+}

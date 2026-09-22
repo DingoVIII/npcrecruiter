@@ -3,7 +3,7 @@ import { Redis } from "@upstash/redis";
 import { createHash } from "node:crypto";
 
 export type FreeMode = "cast" | "quest-giver";
-export const FREE_LIMITS: Record<FreeMode, number> = { cast: 3, "quest-giver": 8 };
+export const FREE_LIMITS: Record<FreeMode, number> = { cast: 12, "quest-giver": 8 };
 
 function redis() {
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return null;

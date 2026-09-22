@@ -22,6 +22,7 @@ type GeneratedNpc = {
   personality: string;
   roleplayingCue: string;
   portraitPrompt: string;
+  questHook: string;
 };
 
 type RecruitResponse = {
@@ -45,13 +46,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const requestedCount = 4;
+    const requestedCount = body.count === 1 ? 1 : 4;
 
     const basePrompt = buildNpcGenerationPrompt({
   ...body,
   count: requestedCount,
+  includeQuestHook: true,
   existingNames: Array.isArray(body.existingNames)
-    ? body.existingNames
+    ? body.existingNames.filter((name): name is string => typeof name === "string").slice(0, 20)
+    : [],
+  existingQuestHooks: Array.isArray(body.existingQuestHooks)
+    ? body.existingQuestHooks.filter((hook): hook is string => typeof hook === "string").slice(0, 20).map((hook) => hook.slice(0, 500))
     : [],
 });
 
@@ -138,6 +143,7 @@ personality: {
     type: "string",
     minLength: 1,
   },
+  questHook: { type: "string", minLength: 1 },
 },
                   required: [
   "name",
@@ -148,6 +154,7 @@ personality: {
   "personality",
   "roleplayingCue",
   "portraitPrompt",
+  "questHook",
 ],
                 },
               },
@@ -173,6 +180,7 @@ const hasInvalidCandidate = result.npcs?.some(
       npc.occupation,
       npc.personality,
       npc.roleplayingCue,
+      npc.questHook,
       npc.portraitPrompt,
     ].some((value) => !containsMeaningfulText(value)) ||
     !Array.isArray(npc.appearance) ||

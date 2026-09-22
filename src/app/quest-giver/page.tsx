@@ -14,6 +14,7 @@ import {
 } from "@/lib/questAdventure";
 import { trackEvent } from "@/lib/analytics";
 import { genders, inspirations, locations, speciesOptions } from "@/lib/generationOptions";
+import { portraitStyles, type PortraitStyle } from "@/lib/portraitStyles";
 import styles from "./quest-giver.module.css";
 
 type Npc = { name: string; gender: string; species: string; occupation: string; appearance: string[]; personality: string; roleplayingCue: string; portraitPrompt: string; portraitUrl?: string };
@@ -56,7 +57,6 @@ export default function QuestGiverPage() {
   const [signedIn, setSignedIn] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [style, setStyle] = useState("Fantasy");
   const [editing, setEditing] = useState(false);
   const [editingQuest, setEditingQuest] = useState(false);
   const [showOptions, setShowOptions] = useState(true);
@@ -174,11 +174,11 @@ export default function QuestGiverPage() {
     const data = await api("/api/quest-givers/quest", { npc, questHook: hook });
     if (data) { trackEvent("full_adventure_generated"); setFullQuest(data.quest); setAdventureTitle(extractAdventureTitle(data.quest)); }
   }
-  async function commissionPortrait() {
+  async function commissionPortrait(style: PortraitStyle) {
     if (!npc || busy) return;
     if (!signedIn) { signInToSave(); return; }
     const data = await api("/api/quest-givers/portrait", { npc, style });
-    if (data) { trackEvent("quest_giver_portrait_commissioned"); setNpc({ ...npc, portraitUrl: data.portraitUrl }); }
+    if (data) { trackEvent("quest_giver_portrait_commissioned", { style }); setNpc({ ...npc, portraitUrl: data.portraitUrl }); }
   }
   const editField = (field: Exclude<keyof Npc, "appearance" | "portraitUrl">, value: string) => { if (npc) setNpc({ ...npc, [field]: value }); };
   const adventureBody = stripAdventureTitle(fullQuest);
@@ -197,14 +197,14 @@ export default function QuestGiverPage() {
           <div className={styles.sectionLabel}>✦ YOUR QUEST GIVER <span>01 / CHARACTER</span></div>
           <div className={styles.characterHeading}><div className={styles.nameRule}>✦ ✦ ✦</div><h2>{npc.name}</h2><p className={styles.subtitle}>{npc.gender} {npc.species} <span>·</span> {npc.occupation}</p></div>
           <div className={styles.portraitFrame}>
-            {npc.portraitUrl ? <img className={styles.portrait} src={npc.portraitUrl} alt={`Portrait of ${npc.name}`} /> : <div className={styles.portraitPlaceholder}><span className={styles.sigil}>✧</span><span className={styles.portraitOverline}>A FACE FOR THE LEGEND</span><p>Every story deserves<br />a face to remember.</p><button disabled={busy} onClick={commissionPortrait} className={styles.portraitButton}>Commission portrait <span>2 Guild Tokens</span></button></div>}
+            {npc.portraitUrl ? <img className={styles.portrait} src={npc.portraitUrl} alt={`Portrait of ${npc.name}`} /> : <div className={styles.portraitPlaceholder}><span className={styles.sigil}>✧</span><span className={styles.portraitOverline}>A FACE FOR THE LEGEND</span><p>Every story deserves<br />a face to remember.</p><div className={styles.portraitStyleButtons}>{portraitStyles.map(style => <button key={style} disabled={busy} onClick={() => commissionPortrait(style)} className={styles.portraitButton}>{style}<span>2 Guild Tokens</span></button>)}</div></div>}
             <span className={styles.cornerTL}>✦</span><span className={styles.cornerTR}>✦</span><span className={styles.cornerBL}>✦</span><span className={styles.cornerBR}>✦</span>
           </div>
-          {npc.portraitUrl && <div className={styles.portraitActions}><a href={npc.portraitUrl} target="_blank" rel="noopener noreferrer">View portrait ↗</a><button disabled={busy} onClick={commissionPortrait}>New portrait · 2 tokens</button></div>}
+          {npc.portraitUrl && <div className={styles.portraitActions}><a href={npc.portraitUrl} target="_blank" rel="noopener noreferrer">View portrait ↗</a><div className={styles.portraitStyleButtons}>{portraitStyles.map(style => <button key={style} disabled={busy} onClick={() => commissionPortrait(style)}>New {style} · 2 tokens</button>)}</div></div>}
           <div className={styles.characterInfo}>
             <div className={styles.characterActions}><button onClick={() => setEditing(!editing)}>{editing ? "Done editing ✓" : "Edit character ✎"}</button><button disabled={busy} onClick={save}>Save NPC ♡</button><button onClick={download}>Download ↓</button></div>
             {editing ? <div className={styles.editFields}>{(["name", "gender", "species", "occupation", "personality", "roleplayingCue", "portraitPrompt"] as const).map(field => <label key={field}>{field.replace(/([A-Z])/g, " $1")}<textarea value={npc[field]} onChange={e => editField(field, e.target.value)} /></label>)}<label>Appearance<textarea value={npc.appearance.join(", ")} onChange={e => setNpc({ ...npc, appearance: e.target.value.split(",").map(s => s.trim()) })} /></label></div> : <><div className={styles.detail}><h3>Appearance</h3><p>{npc.appearance.join(", ")}</p></div><div className={styles.detail}><h3>Personality</h3><p>{npc.personality}</p></div><div className={styles.detail}><h3>At the table</h3><p>{npc.roleplayingCue}</p></div><div className={styles.hook}><span>✧ THE QUEST HOOK</span><textarea ref={questHookRef} aria-label="Quest hook" className={styles.questHookEditor} rows={1} value={questHook} onChange={e => setQuestHook(e.target.value)} /><div className={styles.hookActions}><button type="button" className={styles.primaryButton} disabled={busy} onClick={generateQuestHook}>{busy ? "Generating Quest Hook..." : "New Quest Hook"}</button></div></div></>}
-            <div className={styles.portraitControls}><label>Portrait style<select value={style} onChange={e => setStyle(e.target.value)}>{["Fantasy", "Historical", "Photorealistic"].map(s => <option key={s}>{s}</option>)}</select></label>{!npc.portraitUrl && <p>Portraits are optional. Your character and quest can be saved without one.</p>}</div>
+            <div className={styles.portraitControls}>{!npc.portraitUrl && <p>Portraits are optional. Your character and quest can be saved without one.</p>}</div>
           </div>
         </aside>
         <section className={styles.journal} aria-label="Adventure journal"><div className={styles.journalTop}><div><span className={styles.kicker}>02 / THE ADVENTURE</span><h2>Adventure Journal</h2></div><span className={styles.journalEmblem}>✧</span></div>

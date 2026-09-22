@@ -1,4 +1,5 @@
 import { formatInspirationPrompt } from "@/lib/inspirationPrompts";
+import { normalizePortraitStyle } from "@/lib/portraitStyles";
 
 export type PortraitNpc = {
   name: string;
@@ -11,19 +12,19 @@ export type PortraitNpc = {
 };
 
 function getPortraitStyle(style: string) {
-  switch (style) {
-    case "Fantasy":
+  switch (normalizePortraitStyle(style)) {
+    case "Classic Fantasy":
       return `
 ART DIRECTION
 
-Create a premium fantasy illustration suitable for a modern tabletop RPG sourcebook.
+Create a traditional hand-painted tabletop RPG guidebook illustration with detailed fantasy artwork, rich colours and painterly textures.
 
 STYLE
 
-• Beautiful painterly realism
-• Rich cinematic lighting
-• Warm natural colour palette
-• Elegant brushwork
+• Traditional hand-painted tabletop RPG guidebook illustration
+• Detailed fantasy artwork with rich saturated colours
+• Visible painterly textures and elegant brushwork
+• Warm, dramatic but readable lighting
 • Realistic anatomy
 • Medieval-inspired clothing and armour
 • Slightly idealised but believable people
@@ -41,43 +42,39 @@ DO NOT
 • Multiple characters
 `.trim();
 
-    case "Historical":
+    case "Illustrated Realism":
       return `
 ART DIRECTION
 
-Create a museum-quality historical reconstruction portrait.
+  Create realistic fantasy character concept art with natural anatomy, detailed digital painting and cinematic lighting. The result must remain visibly illustrated rather than photographic.
 
 STYLE
 
-• Authentic medieval clothing
-• Historically grounded equipment
-• Restrained colours
-• Earth tones
-• Natural lighting
-• Ordinary believable people
-• Painterly realism
-• Museum illustration quality
+• Natural anatomy and believable proportions
+• Detailed digital painting with controlled brushwork
+• Cinematic lighting and realistic materials
+• Clearly illustrated fantasy concept-art finish
 
 DO NOT
 
-• High fantasy armour
-• Magical effects
-• Glamour photography
-• Heroic exaggeration
-• Fantasy clichés
+• Photographic or documentary appearance
+• Plastic CGI rendering
+• Anime, manga or comic styling
+• Generic fantasy replacement character
 `.trim();
 
-    case "Photorealistic":
+  case "Cinematic Realism":
       return `
 ART DIRECTION
 
-Create an ultra-photorealistic portrait of a believable medieval person.
+Create a photorealistic fantasy character portrait resembling a live-action fantasy film, with realistic skin, clothing, materials and lighting.
 
 STYLE
 
-• Documentary photography
-• Natural lighting
-• Authentic skin texture
+• Live-action fantasy film realism
+• Authentic skin texture and natural imperfections
+• Realistic clothing, armour and materials
+• Cinematic lens, lighting and depth of field
 • Wrinkles, scars and imperfections
 • Real fabrics
 • Shallow depth of field
@@ -85,9 +82,8 @@ STYLE
 
 DO NOT
 
-• Painterly effects
-• CGI appearance
-• Digital painting
+• Painterly or visibly illustrated effects
+• CGI or plastic rendering
 • Beauty filters
 • Plastic skin
 `.trim();

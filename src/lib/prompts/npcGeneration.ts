@@ -6,7 +6,9 @@ export type RecruitNpcInput = {
   species: string[];
   genderMix: string;
   count?: number;
+  includeQuestHook?: boolean;
   existingNames?: string[];
+  existingQuestHooks?: string[];
 };
 
 export function buildNpcGenerationPrompt({
@@ -15,8 +17,14 @@ export function buildNpcGenerationPrompt({
   species,
   genderMix,
   count = 9,
+  includeQuestHook = true,
   existingNames = [],
+  existingQuestHooks = [],
 }: RecruitNpcInput) {
+  const existingQuestHooksText = existingQuestHooks.length > 0
+    ? existingQuestHooks.map((hook, index) => `${index + 1}. ${hook}`).join("\n")
+    : "None";
+
   const existingNamesText =
     existingNames.length > 0
       ? existingNames.join(", ")
@@ -48,12 +56,15 @@ ${existingNamesText}
 
 Do not repeat or closely imitate any existing name listed above.
 
+Quest hooks already in this cast (including hooks from characters being refreshed):
+${existingQuestHooksText}
+
 RECRUITMENT RULES
 
 - Obey every user constraint.
 - Use only the allowed species.
-- Make all four NPCs distinct from one another.
-- All four should feel as though they belong naturally in the same location and society.
+- Make every NPC distinct from the other characters in the cast.
+- All characters should feel as though they belong naturally in the same location and society.
 - Choose occupations that make sense for the selected location.
 - Blend species and cultural inspiration when creating every name.
 - Let the selected cultural naming system dominate, with species identity influencing it subtly.
@@ -69,6 +80,18 @@ RECRUITMENT RULES
 - Avoid comedy names unless the selected inspiration clearly calls for comedy.  
 - Keep the characters immediately usable at the table.
 
+QUEST HOOK
+
+Write one original, concise, actionable quest hook for EACH NPC. The hook is mandatory, even for a single-character recruitment.
+
+- Make the hook arise from THIS character’s occupation, personality, relationships, access, or a believable problem in the selected location. Give the DM a concrete situation, a specific request or discovery, and an intriguing complication or choice.
+- Write 1–2 short sentences, about 20–45 words total. Include a specific detail the DM can use immediately.
+- Vary the type and stakes: an investigation, rescue, negotiation, delivery, social dispute, unusual discovery, moral dilemma, strange local occurrence, or personal request can all work. Not every hook needs a villain, theft, missing person, ancient relic, or monster.
+- Avoid generic interchangeable errands, repeated plot templates, and hooks that could be swapped between NPCs without changing anything.
+- Do not repeat or paraphrase the existing hooks listed above. Change the central problem, the requested action, and the twist, not merely the names or objects.
+- Keep the quest appropriate to the location and inspiration, without relying on stereotypes.
+- Return an actual quest hook, never an empty string, placeholder, or instruction to invent one.
+
 VISIBLE CARD INFORMATION
 
 Each NPC must include:
@@ -80,6 +103,7 @@ Each NPC must include:
 - appearance
 - personality
 - roleplayingCue
+- questHook
 
 The appearance field must contain exactly three short descriptors.
 
@@ -222,6 +246,7 @@ Return an object with this exact structure:
   ],
   "personality": "string",
   "roleplayingCue": "string",
+  "questHook": "string",
   "portraitPrompt": "string"
 }
   ]

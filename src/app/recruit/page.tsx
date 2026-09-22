@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { GuildFeedback } from "@/components/feedback/GuildFeedback";
 import { trackEvent } from "@/lib/analytics";
 import { genders, inspirations, locations, speciesOptions } from "@/lib/generationOptions";
+import { normalizePortraitStyle, portraitStyles, type PortraitStyle } from "@/lib/portraitStyles";
 import {
   PENDING_NPC_KEY,
   QUEST_GIVER_PREFILL_KEY,
@@ -24,6 +25,7 @@ type Npc = {
   portraitPrompt: string;
   
   hired?: boolean;
+  questHook?: string;
 
   portraitUrl?: string;
   portraitApproved?: boolean;
@@ -176,12 +178,6 @@ const genders = [
   "Custom",
 ]; */
 
-const portraitStyles = [
-  "Fantasy",
-  "Historical",
-  "Photorealistic",
-];
-
 export default function Home() {
   const [location, setLocation] = useState("Any");
   const [customLocation, setCustomLocation] = useState("");
@@ -197,10 +193,12 @@ export default function Home() {
   const [customGender, setCustomGender] = useState("");
 
   const [portraitStyle, setPortraitStyle] =
-  useState("Fantasy");
+  useState<PortraitStyle>("Classic Fantasy");
 
   const [npcs, setNpcs] = useState<Npc[]>([]);
   const [isRecruiting, setIsRecruiting] = useState(false);
+  const [isRefreshingAll, setIsRefreshingAll] = useState(false);
+  const [recruitingSlot, setRecruitingSlot] = useState<number | null>(null);
   const [isGeneratingPortraits, setIsGeneratingPortraits] =
     useState(false);
     const [portraitJobId, setPortraitJobId] =
@@ -211,7 +209,6 @@ const [saveMessage, setSaveMessage] = useState("");
   const [guildName, setGuildName] = useState<string | null>(null);
 const [authChecked, setAuthChecked] = useState(false);
 const [freeRemaining, setFreeRemaining] = useState<number | null>(null);
-const [pendingSave, setPendingSave] = useState(false);
 
 const [guildTokens, setGuildTokens] = useState(0);
 const [guildLedger, setGuildLedger] = useState<
@@ -230,10 +227,10 @@ const [isGuildLedgerOpen, setIsGuildLedgerOpen] =
 
   useEffect(() => {
     const previous = sessionStorage.getItem("npc-recruiter-cast-session");
-    if (previous) { try { setNpcs(JSON.parse(previous) as Npc[]); } catch {} }
+    if (previous) { try { setNpcs((JSON.parse(previous) as Npc[]).map(npc => ({ ...npc, hired: true }))); } catch {} }
     void fetch("/api/allowance").then(r => r.json()).then(data => setFreeRemaining(data.cast?.remaining ?? null)).catch(() => {});
   }, []);
-  useEffect(() => { if (npcs.length) sessionStorage.setItem("npc-recruiter-cast-session", JSON.stringify(npcs)); }, [npcs]);
+  useEffect(() => { sessionStorage.setItem("npc-recruiter-cast-session", JSON.stringify(npcs)); }, [npcs]);
 
   useEffect(() => {
   const savedPortraitStyle =
@@ -241,11 +238,8 @@ const [isGuildLedgerOpen, setIsGuildLedgerOpen] =
       "npc-recruiter-portrait-style",
     );
 
-  if (
-    savedPortraitStyle &&
-    portraitStyles.includes(savedPortraitStyle)
-  ) {
-    setPortraitStyle(savedPortraitStyle);
+  if (savedPortraitStyle) {
+    setPortraitStyle(normalizePortraitStyle(savedPortraitStyle));
   }
 }, []);
 
@@ -322,9 +316,9 @@ try {
       setInspiration(result.cast.inspiration);
       setSelectedSpecies(result.cast.species);
       setPortraitStyle(
-        result.cast.portrait_style ?? "Fantasy",
+        normalizePortraitStyle(result.cast.portrait_style ?? "Classic Fantasy"),
       );
-      setNpcs(result.cast.npcs ?? []);
+      setNpcs((result.cast.npcs ?? []).map((npc: Npc) => ({ ...npc, hired: true })));
     }
   }
 } catch (error) {
@@ -431,18 +425,6 @@ setAuthChecked(true);
     return [...selectedSpecies, trimmedCustomSpecies];
   }
 
-  function toggleHire(index: number) {
-  setNpcs((current) =>
-    current.map((npc, i) =>
-      i === index
-        ? {
-            ...npc,
-            hired: !npc.hired,
-          }
-        : npc,
-    ),
-  );
-}
 function togglePortraitApproval(index: number) {
   setNpcs((current) =>
     current.map((npc, i) =>
@@ -464,35 +446,38 @@ function updateNpc(index: number, updatedNpc: Npc) {
             ...updatedNpc,
             hired: npc.hired,
             portraitUrl: npc.portraitUrl,
+            portraitApproved: npc.portraitApproved,
           }
         : npc,
     ),
   );
 }
 
-  async function recruitNpcs() {
+  async function recruitNpcs(slot: number): Promise<boolean> {
+    if (slot < 0 || slot > 3 || npcs[slot]?.portraitUrl) return false;
     const recruitmentSpecies = getRecruitmentSpecies();
 
     if (recruitmentSpecies.length === 0 || isRecruiting) {
-      return;
+      return false;
     }
 
     if (location === "Custom" && !customLocation.trim()) {
       setErrorMessage("Please describe your custom location.");
-      return;
+      return false;
     }
 
     if (inspiration === "Custom" && !customInspiration.trim()) {
       setErrorMessage("Please describe your custom inspiration.");
-      return;
+      return false;
     }
 
     if (gender === "Custom" && !customGender.trim()) {
       setErrorMessage("Please describe your preferred gender mix.");
-      return;
+      return false;
     }
 
     setIsRecruiting(true);
+    setRecruitingSlot(slot);
     setErrorMessage("");
 
     try {
@@ -515,6 +500,10 @@ function updateNpc(index: number, updatedNpc: Npc) {
             gender === "Custom"
               ? customGender.trim()
               : gender,
+          count: 1,
+          includeQuestHook: true,
+          existingNames: npcs.filter((_, index) => index !== slot).map(npc => npc.name),
+          existingQuestHooks: npcs.map(npc => npc.questHook).filter((hook): hook is string => Boolean(hook?.trim())),
         }),
       });
       if (response.ok) trackEvent("npc_generation_completed", { location, inspiration, gender });
@@ -532,13 +521,15 @@ function updateNpc(index: number, updatedNpc: Npc) {
 
       const result = (await response.json()) as RecruitResponse;
 
-      if (typeof freeRemaining === "number") setFreeRemaining(Math.max(0, freeRemaining - 1));
-      setNpcs(
-  result.npcs.slice(0, 4).map((npc) => ({
-    ...npc,
-    hired: false,
-  })),
-);
+      setFreeRemaining((remaining) => remaining === null ? null : Math.max(0, remaining - 1));
+      const candidate = result.npcs[0];
+      if (!candidate) throw new Error("No candidate was returned.");
+      setNpcs(current => {
+        const next = [...current];
+        next[slot] = { ...candidate, hired: true };
+        return next;
+      });
+      return true;
     } catch (error) {
       console.error("Recruitment failed:", error);
 
@@ -547,12 +538,32 @@ function updateNpc(index: number, updatedNpc: Npc) {
           ? error.message
           : "The recruiter could not complete the interviews.",
       );
+      return false;
     } finally {
       setIsRecruiting(false);
+      setRecruitingSlot(null);
     }
   }
 
-  async function generatePortraits() {
+  async function refreshAllCharacters() {
+    if (isRecruiting || isRefreshingAll || isGeneratingPortraits || !hasSpecies ||
+        npcs.some((npc) => Boolean(npc?.portraitUrl))) return;
+    const count = 4;
+    if (!window.confirm(`Refresh all four character slots? This uses ${count} text generations and replaces the current cast.`)) return;
+    setIsRefreshingAll(true);
+    try {
+      // Sequential requests avoid racing the anonymous allowance and let each
+      // new hook take the preceding generated characters into account.
+      for (let index = 0; index < 4; index += 1) {
+        const success = await recruitNpcs(index);
+        if (!success) break;
+      }
+    } finally {
+      setIsRefreshingAll(false);
+    }
+  }
+
+  async function generatePortraits(style: PortraitStyle) {
   const hiredNpcs = npcs.filter((npc) => npc.hired);
 
   if (hiredNpcs.length !== 4 || isGeneratingPortraits) {
@@ -568,7 +579,7 @@ function updateNpc(index: number, updatedNpc: Npc) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-  style: portraitStyle,
+  style,
   inspiration,
   npcs: hiredNpcs,
 }),
@@ -595,7 +606,7 @@ if (!response.ok) {
 }
 
 setPortraitJobId(result.jobId);
-trackEvent("portrait_commission_requested", { portraitStyle });
+trackEvent("portrait_commission_requested", { portraitStyle: style });
     } catch (error) {
     console.error("Portrait generation failed:", error);
 
@@ -741,6 +752,7 @@ async function replaceUnhiredNpcs() {
               : gender,
           count: requestedCount,
           existingNames: npcs.map((npc) => npc.name),
+          existingQuestHooks: npcs.map(npc => npc.questHook).filter((hook): hook is string => Boolean(hook?.trim())),
         }),
       });
 
@@ -1062,6 +1074,27 @@ async function downloadPrintableCast() {
   }
 }
 
+function downloadEntireCast() {
+  if (npcs.length !== 4) return;
+  const content = npcs.map((npc, index) => [
+    `NPC ${index + 1}: ${npc.name}`,
+    `${npc.gender} ${npc.species} | ${npc.occupation}`,
+    `Appearance: ${npc.appearance.join(", ")}`,
+    `Personality: ${npc.personality}`,
+    `Roleplaying cue: ${npc.roleplayingCue}`,
+    ...(npc.questHook ? [`Quest hook: ${npc.questHook}`] : []),
+    `Portrait prompt: ${npc.portraitPrompt}`,
+    `Portrait URL: ${npc.portraitUrl || "Not commissioned"}`,
+  ].join("\n")).join("\n\n----------------------------------------\n\n");
+  const url = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "npc-recruiter-cast.txt";
+  link.click();
+  URL.revokeObjectURL(url);
+  trackEvent("npc_downloaded", { format: "text_cast" });
+}
+
   async function signOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -1070,8 +1103,8 @@ async function downloadPrintableCast() {
   }
 
   return (
-    <main className="min-h-screen bg-[#d7c8aa] text-[#211d17] xl:h-screen xl:overflow-hidden">
-      <div className="grid min-h-screen w-full gap-3 p-3 [@media(max-height:800px)]:gap-2 [@media(max-height:800px)]:p-2 xl:h-screen xl:min-h-0 xl:grid-cols-[30fr_35fr_35fr] xl:items-stretch">
+    <main className="min-h-screen bg-[#d7c8aa] text-[#211d17] xl:h-[calc(100vh-9rem)] xl:min-h-0 xl:overflow-hidden">
+      <div className="grid min-h-screen w-full gap-3 p-3 [@media(max-height:800px)]:gap-2 [@media(max-height:800px)]:p-2 xl:h-full xl:min-h-0 xl:grid-cols-[30fr_35fr_35fr] xl:items-stretch">
   <aside className="relative flex min-h-0 flex-col overflow-hidden rounded-[18px] border-2 border-[#7f5f24] bg-[radial-gradient(circle_at_20%_0%,rgba(111,79,31,0.28),transparent_34%),radial-gradient(circle_at_100%_100%,rgba(75,48,18,0.2),transparent_34%),linear-gradient(180deg,#1c150f_0%,#17110c_48%,#120d09_100%)] text-[#ead7a9] shadow-[inset_0_0_0_2px_rgba(220,172,72,0.14),inset_0_0_28px_rgba(0,0,0,0.55),5px_6px_0_rgba(42,29,13,0.28)]">
     <span className="pointer-events-none absolute left-1 top-1 z-20 h-5 w-5 rounded-full border border-[#c49a46] bg-[#2a1d10] shadow-[inset_0_0_0_2px_rgba(219,171,72,0.16)]" />
           <span className="pointer-events-none absolute right-1 top-1 z-20 h-5 w-5 rounded-full border border-[#c49a46] bg-[#2a1d10] shadow-[inset_0_0_0_2px_rgba(219,171,72,0.16)]" />
@@ -1328,44 +1361,20 @@ async function downloadPrintableCast() {
             </LedgerSection>
 
             <LedgerSection title="Guild Archive">
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={saveCast}
-                  disabled={npcs.length !== 4 || isSavingCast}
-                  className="w-full rounded-sm border border-[#a98035] bg-[#19140f] px-4 py-3 text-xs font-bold uppercase tracking-[0.08em] text-[#ead7a9] transition hover:bg-[#2c2116] disabled:cursor-not-allowed disabled:border-[#594b39] disabled:text-[#756a58]"
-                >
-                  {isSavingCast
-                    ? "Saving Cast..."
-                    : guildName
-                      ? "Save Cast to My Account"
-                      : "Join the Guild to Save Cast"}
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={saveCast} disabled={npcs.length !== 4 || isSavingCast} className="w-full rounded-sm border border-[#a98035] bg-[#19140f] px-3 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-[#ead7a9] transition hover:bg-[#2c2116] disabled:cursor-not-allowed disabled:border-[#594b39] disabled:text-[#756a58]">
+                  {isSavingCast ? "Saving..." : "Save Entire Cast"}
                 </button>
-                {npcs.length > 0 && <div className="space-y-2 border border-[#8d6b2c] p-3">
-                  <p className="text-xs">Save one favourite NPC to your guild for free:</p>
-                  {npcs.map((npc, index) => <button key={`download-${index}`} type="button" className="block w-full border border-[#8d6b2c] p-2 text-left text-xs" onClick={() => {
-                    const content = `${npc.name}\n${npc.gender} ${npc.species} | ${npc.occupation}\nAppearance: ${npc.appearance.join(", ")}\nPersonality: ${npc.personality}\nRoleplaying cue: ${npc.roleplayingCue}`;
-                    const url = URL.createObjectURL(new Blob([content], { type: "text/plain" }));
-                    const link = document.createElement("a"); link.href = url; link.download = `${npc.name.replace(/[^a-z0-9-]/gi, "-")}.txt`; link.click(); URL.revokeObjectURL(url);
-                  }}>Download {npc.name} as text</button>)}
-                  {npcs.map((npc, index) => <button key={index} type="button" disabled={pendingSave} className="block w-full border border-[#8d6b2c] p-2 text-left text-xs" onClick={async () => {
-                    if (!guildName) { sessionStorage.setItem(PENDING_NPC_KEY, JSON.stringify({ npc })); window.location.href = "/login?next=/recruit"; return; }
-                    setPendingSave(true);
-                    try { const response = await fetch("/api/npcs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ npc }) }); const result = await response.json(); setSaveMessage(result.message || result.error || "Could not save NPC."); }
-                    finally { setPendingSave(false); }
-                  }}>Save {npc.name}</button>)}
-                </div>}
+                <button type="button" onClick={downloadEntireCast} disabled={npcs.length !== 4} className="w-full rounded-sm border border-[#8d6b2c] bg-[#19140f] px-3 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-[#ead7a9] transition hover:bg-[#2c2116] disabled:cursor-not-allowed disabled:border-[#594b39] disabled:text-[#756a58]">
+                  Download Entire Cast
+                </button>
+                {saveMessage && <div className="col-span-2 border border-[#55745b] bg-[#17261b] px-3 py-2 text-center text-xs text-[#b7d4ba]">{saveMessage}</div>}
                 <Link
                   href={guildName ? "/my-casts" : "/login"}
                   className="block w-full rounded-sm border border-[#8d6b2c] bg-[#19140f] px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.08em] text-[#ead7a9] transition hover:bg-[#2c2116]"
                 >
                   View My Saved Casts
                 </Link>
-                {saveMessage && (
-                  <div className="border border-[#55745b] bg-[#17261b] px-3 py-2 text-center text-xs text-[#b7d4ba]">
-                    {saveMessage}
-                  </div>
-                )}
               </div>
             </LedgerSection>
 
@@ -1399,58 +1408,57 @@ async function downloadPrintableCast() {
 
         <section className="flex min-h-0 flex-col overflow-hidden rounded-[18px] border border-[#9e834e] bg-[#f3e5c8] shadow-[4px_5px_0_rgba(72,55,28,0.18)]">
           <CreamHeading
-            title={npcs.length > 0 && hiredCount === 4 ? "Hired Personnel" : "Candidate Roster"}
-            subtitle={npcs.length > 0 ? `${hiredCount} of ${npcs.length} candidates hired` : "Review your candidates. Hire the best."}
+            title="Candidate Roster"
+            subtitle={`${npcs.filter(Boolean).length} of 4 characters created. Build your cast one character at a time.`}
+            trailing={!guildName ? `Text recruitment · ${freeRemaining ?? "…"} free generations remaining today` : "Text recruitment · Create one character at a time"}
           />
 
           <div className="flex min-h-0 flex-1 flex-col px-5 pt-5 pb-4">
-  <div className="mb-3 shrink-0">
-    <p className="mb-2 text-xs font-bold">
-      Text Recruitment
-    </p>
-
-    <div className="flex h-[34px] items-center justify-center border border-[#a9946d] bg-[#fff9ec] px-3 text-center font-serif text-[11px] italic text-[#625744]">
-      Generates four text NPCs. {!guildName && `Free casts remaining today: ${freeRemaining ?? "checking..."} / 3.`}
+            <div className="mb-3 grid shrink-0 grid-cols-3 gap-2">
+              <button type="button" onClick={() => void refreshAllCharacters()}
+                disabled={!hasSpecies || isRecruiting || isRefreshingAll || isGeneratingPortraits || npcs.some((npc) => Boolean(npc?.portraitUrl))}
+                title="Replaces all four characters; uses four text generations"
+                className="col-span-3 border border-[#7e2518] bg-[#8f2e1d] px-2 py-3 text-[9px] font-bold uppercase leading-tight tracking-[0.06em] text-white transition hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]">
+                {isRefreshingAll ? "Refreshing all characters..." : "Refresh All Characters · 4 Generations"}
+              </button>
+            </div>
+  <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:#8d6b2c_#17110c] [scrollbar-width:thin]">
+    <div className="grid grid-cols-2 gap-3">
+      {Array.from({ length: 4 }, (_, index) => {
+        const npc = npcs[index];
+        const locked = Boolean(npc?.portraitUrl);
+        const action = (
+          <button type="button" onClick={() => void recruitNpcs(index)}
+            disabled={!hasSpecies || isRecruiting || isGeneratingPortraits || locked}
+            className="w-full border border-[#7e2518] bg-[#8f2e1d] px-2 py-2 text-[10px] font-bold uppercase tracking-wide text-white hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]">
+            {recruitingSlot === index ? "Creating..." : npc ? "Refresh" : "Create Character"}
+          </button>
+        );
+        return npc ? (
+          <CompactNpcCard key={index}
+            npc={npc}
+            number={index + 1}
+            editable={!locked && !isGeneratingPortraits}
+            onUpdate={(updatedNpc) => updateNpc(index, updatedNpc)}
+            onQuestGiver={() => {
+              sessionStorage.setItem(QUEST_GIVER_PREFILL_KEY, JSON.stringify({ npc }));
+              window.location.href = "/quest-giver";
+            }}
+            refreshAction={action}
+          />
+        ) : (
+          <div key={index} className="relative flex aspect-[20/23] min-h-0 flex-col border border-dashed border-[#a9946d] bg-[#fff9ec] p-3 text-center">
+            <span className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#292720] font-serif text-xs font-bold text-white">{index + 1}</span>
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
+              <p className="font-serif text-sm font-bold">Empty character slot</p>
+              <p className="mt-2 text-xs text-[#625744]">Choose your generation options on the left.</p>
+            </div>
+            <div className="shrink-0">{action}</div>
+          </div>
+        );
+      })}
     </div>
   </div>
-
-  <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:#8d6b2c_#17110c] [scrollbar-width:thin]">
-    {npcs.length === 0 ? (
-      <EmptyRoster />
-    ) : (
-     <div className="grid grid-cols-2 gap-3">
-  {npcs.slice(0, 4).map((npc, index) => (
-  <CompactNpcCard
-    key={`${npc.name}-${index}`}
-    npc={npc}
-    number={index + 1}
-    editable={!portraitsGenerated && !isGeneratingPortraits}
-    onToggleHire={() => toggleHire(index)}
-    onUpdate={(updatedNpc) =>
-      updateNpc(index, updatedNpc)
-    }
-    onQuestGiver={() => {
-      sessionStorage.setItem(QUEST_GIVER_PREFILL_KEY, JSON.stringify({ npc }));
-      window.location.href = "/quest-giver";
-    }}
-  />
-))}
-      </div>
-    )}
-  </div>
-
-  <BottomActionBar>
-  <button
-    type="button"
-    onClick={recruitNpcs}
-    disabled={!hasSpecies || isRecruiting}
-    className="w-full border border-[#7e2518] bg-[#8f2e1d] px-4 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white transition hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]"
-  >
-    {isRecruiting
-      ? "Interviewing Candidates..."
-      : "Recruit New Candidates — Free"}
-  </button>
-</BottomActionBar>
 
 </div>
         </section>
@@ -1459,38 +1467,23 @@ async function downloadPrintableCast() {
   <CreamHeading
     title="Portrait Commissions"
     subtitle="Bring your cast to life."
+    trailing="Portraits cost 5 Guild Tokens"
   />
 
   <div className="flex min-h-0 flex-1 flex-col px-5 pt-5 pb-4">
-    <p className="mb-2 text-xs font-bold">
-      Portrait Style
-    </p>
-
-    <div className="mb-3 shrink-0">
-  <div className="grid grid-cols-3 gap-2">
-    {portraitStyles.map((style) => (
-      <button
-        key={style}
-        type="button"
-        onClick={() => {
-          setPortraitStyle(style);
-
-          window.localStorage.setItem(
-            "npc-recruiter-portrait-style",
-            style,
-          );
-        }}
-        className={
-          portraitStyle === style
-            ? "border border-[#292720] bg-[#292720] px-2 py-2 text-[11px] font-bold text-white"
-            : "border border-[#a9946d] bg-[#fff9ec] px-2 py-2 text-[11px] font-bold text-[#352f26] transition hover:bg-[#eee0c2]"
-        }
-      >
-        {style}
-      </button>
-    ))}
-  </div>
-</div>
+    <div className="mb-3 grid shrink-0 grid-cols-3 gap-2">
+      {portraitStyles.map((style) => (
+        <button
+          key={style}
+          type="button"
+          onClick={() => { setPortraitStyle(style); void generatePortraits(style); }}
+          disabled={hiredCount !== 4 || guildTokens < 5 || isGeneratingPortraits}
+          className="border border-[#7e2518] bg-[#8f2e1d] px-2 py-3 text-[9px] font-bold uppercase leading-tight tracking-[0.06em] text-white transition hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]"
+        >
+          {isGeneratingPortraits ? "Generating..." : style}
+        </button>
+      ))}
+    </div>
 
 <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:#8d6b2c_#17110c] [scrollbar-width:thin]">
       <div className="grid grid-cols-2 gap-3">
@@ -1510,30 +1503,6 @@ async function downloadPrintableCast() {
       </div>
     </div>
 
-    <BottomActionBar>
-      <button
-        type="button"
-        onClick={generatePortraits}
-        disabled={
-          hiredCount !== 4 ||
-          guildTokens < 5 ||
-          isGeneratingPortraits
-        }
-        className="w-full border border-[#7e2518] bg-[#8f2e1d] px-4 py-4 text-sm font-bold uppercase tracking-[0.1em] text-white transition hover:bg-[#a83a25] disabled:cursor-not-allowed disabled:border-[#aaa08b] disabled:bg-[#c7baa3] disabled:text-[#7b6e5a]"
-      >
-        {isGeneratingPortraits
-          ? "The Artists Are Painting..."
-          : hiredCount !== 4
-            ? `Hire ${4 - hiredCount} More ${
-                4 - hiredCount === 1
-                  ? "Candidate"
-                  : "Candidates"
-              }`
-            : guildTokens < 5
-              ? "Requires 5 Guild Tokens"
-              : "Commission Artwork — 5 Guild Tokens"}
-      </button>
-    </BottomActionBar>
 </div>
 </aside>
 
@@ -1579,11 +1548,12 @@ function LedgerSection({ title, children }: LedgerSectionProps) {
 type CreamHeadingProps = {
   title: string;
   subtitle: string;
+  trailing?: string;
 };
 
-function CreamHeading({ title, subtitle }: CreamHeadingProps) {
+function CreamHeading({ title, subtitle, trailing }: CreamHeadingProps) {
   return (
-    <div className="relative border-b border-[#9e834e] bg-[linear-gradient(180deg,#fbefd7_0%,#f2dfbb_100%)] px-5 py-4 shadow-[inset_0_-1px_0_rgba(255,255,255,0.45)]">
+    <div className="relative border-b border-[#9e834e] bg-[linear-gradient(180deg,#fbefd7_0%,#f2dfbb_100%)] px-5 py-[14px] shadow-[inset_0_-1px_0_rgba(255,255,255,0.45)]">
       <div className="pointer-events-none absolute inset-x-4 top-1.5 flex items-center gap-2 opacity-70">
         <div className="h-px flex-1 bg-[linear-gradient(90deg,transparent,#ad8c4e)]" />
         <span className="text-[8px] text-[#8f6e32]">◆</span>
@@ -1603,6 +1573,7 @@ function CreamHeading({ title, subtitle }: CreamHeadingProps) {
             {subtitle}
           </p>
         </div>
+        {trailing && <p className="ml-auto max-w-[48%] text-right text-[10px] font-bold leading-4 text-[#625744]">{trailing}</p>}
       </div>
     </div>
   );
@@ -1612,18 +1583,18 @@ type CompactNpcCardProps = {
   npc: Npc;
   number: number;
   editable: boolean;
-  onToggleHire: () => void;
   onUpdate: (updatedNpc: Npc) => void;
   onQuestGiver: () => void;
+  refreshAction: React.ReactNode;
 };
 
 function CompactNpcCard({
   npc,
   number,
   editable,
-  onToggleHire,
   onUpdate,
   onQuestGiver,
+  refreshAction,
 }: CompactNpcCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftNpc, setDraftNpc] = useState<Npc>(npc);
@@ -1689,23 +1660,7 @@ function CompactNpcCard({
         {number}
       </span>
 
-      <button
-        type="button"
-        onClick={onToggleHire}
-        title={
-          npc.hired
-            ? "Unhire candidate"
-            : "Hire candidate"
-        }
-        className={
-          npc.hired
-            ? "absolute right-2 top-2 text-lg text-[#3d6043]"
-            : "absolute right-2 top-2 text-lg text-[#6c6252] hover:text-[#8f2e1d]"
-        }
-      >
-        {npc.hired ? "⬟" : "♢"}
-      </button>
-
+      <div className="mt-7 min-h-0 flex-1 overflow-y-auto [scrollbar-width:thin]">
       <div className="mt-7 text-center">
         <h3 className="font-serif text-base font-bold leading-tight">
           {npc.name}
@@ -1753,41 +1708,17 @@ function CompactNpcCard({
         </div>
       </div>
 
-      <div className="mt-auto grid grid-cols-2 gap-1.5">
-        <button
-          type="button"
-          onClick={onToggleHire}
-          className={
-            npc.hired
-              ? "border border-[#456149] bg-[#456149] px-1 py-2 text-[9px] font-bold uppercase tracking-wide text-white"
-              : "border border-[#8d7751] bg-[#fff9ec] px-1 py-2 text-[9px] font-bold uppercase tracking-wide hover:bg-[#efe1c5]"
-          }
-        >
-          {npc.hired ? "Hired — Keep" : "Hire"}
-        </button>
-
-        {editable ? (
-          <button
-            type="button"
-            onClick={beginEditing}
-            className="border border-[#8d7751] bg-[#efe1c5] px-1 py-2 text-[9px] font-bold uppercase tracking-wide hover:bg-[#e4d3b2]"
-          >
-            Edit
-          </button>
-        ) : (
-          <div className="flex items-center justify-center border border-[#b4a58a] bg-[#e5dac5] px-1 py-2 text-[9px] font-bold uppercase tracking-wide text-[#847762]">
-            Text Locked
-          </div>
-        )}
-        {npc.hired && (
-          <button
-            type="button"
-            onClick={onQuestGiver}
-            className="col-span-2 border border-[#8f2e1d] bg-[#8f2e1d] px-1 py-2 text-[9px] font-bold uppercase tracking-wide text-white hover:bg-[#a83a25]"
-          >
-            Quest Giver
-          </button>
-        )}
+      {npc.questHook && <div className="mt-2 border-t border-[#c7a86c] pt-2 text-center text-[11px] leading-4">
+        <p className="font-serif font-bold">Quest Hook</p><p>{npc.questHook}</p>
+      </div>}
+      </div>
+      <div className="mt-auto grid shrink-0 grid-cols-3 gap-1.5 pt-2">
+        {editable ? <button type="button" onClick={beginEditing}
+          className="border border-[#8d7751] bg-[#efe1c5] px-1 py-2 text-[9px] font-bold uppercase tracking-wide hover:bg-[#e4d3b2]">Edit</button>
+        : <div className="flex items-center justify-center border border-[#b4a58a] bg-[#e5dac5] px-1 py-2 text-[9px] font-bold uppercase tracking-wide text-[#847762]">Text Locked</div>}
+        {refreshAction}
+        <button type="button" onClick={onQuestGiver}
+          className="border border-[#8f2e1d] bg-[#8f2e1d] px-1 py-2 text-[9px] font-bold uppercase tracking-wide text-white hover:bg-[#a83a25]">Develop Quest</button>
       </div>
 
       {isEditing && editable && (
@@ -1839,6 +1770,13 @@ function CompactNpcCard({
               onChange={(value) =>
                 updateDraft("personality", value)
               }
+              multiline
+            />
+
+            <NpcEditField
+              label="Quest Hook"
+              value={draftNpc.questHook ?? ""}
+              onChange={(value) => updateDraft("questHook", value)}
               multiline
             />
 

@@ -5,6 +5,8 @@ import { start } from "workflow/api";
 import { processPortraitJob } from "@/app/workflows/processPortraitJob";
 
 import { createClient } from "@/lib/supabase/server";
+import { normalizePortraitStyle } from "@/lib/portraitStyles";
+import { isPortraitStyle } from "@/lib/portraitStyles";
 
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -180,7 +182,7 @@ export async function POST(request: Request) {
           body.npcs.length <= 4
         : body.npcs.length === 4);
 
-    if (!validNpcCount || !body.style?.trim()) {
+    if (!validNpcCount || !body.style?.trim() || !isPortraitStyle(body.style)) {
       return NextResponse.json(
         {
           error: isReroll
@@ -190,6 +192,8 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+
+    const portraitStyle = normalizePortraitStyle(body.style);
 
     const invalidNpc = body.npcs.find(
   (npc) =>
@@ -351,7 +355,7 @@ export async function POST(request: Request) {
   user_id: user.id,
   cast_id: activeCast.id,
   status: "queued",
-  portrait_style: body.style.trim(),
+  portrait_style: portraitStyle,
   inspiration: body.inspiration?.trim() || null,
   requested_npcs: body.npcs,
   completed_portraits: [],

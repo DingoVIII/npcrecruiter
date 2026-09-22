@@ -77,9 +77,23 @@ export default async function HomePage() {
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#d7b775]">How to Use NPC Recruiter</p>
           <h2 className="mt-3 font-serif text-3xl font-bold text-[#f1dfb9]">Your Guildmaster&apos;s Guide</h2>
           <p className="mx-auto mt-3 max-w-2xl text-[#c4b292]">New to NPC Recruiter? Watch how to create characters, develop adventures and bring your NPCs to life.</p>
-          <div className="mt-7 flex aspect-video items-center justify-center border border-[#8d6b2c] bg-[radial-gradient(ellipse_at_center,#4b3420,#171008)] p-6">
-            <div><span className="text-5xl text-[#d9aa4b]">✦</span><p className="mt-4 font-serif text-xl text-[#f1dfb9]">Your Guildmaster&apos;s Guide is Coming Soon</p></div>
+          <div className="mt-7 aspect-video overflow-hidden border border-[#8d6b2c] bg-[#171008]">
+            <iframe
+              className="h-full w-full"
+              src="https://www.youtube-nocookie.com/embed/B-A4nBwLJVo"
+              title="How to Use NPC Recruiter | Create Fantasy NPCs and Adventures"
+              loading="lazy"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
           </div>
+          <Link
+            href="/recruit"
+            className="mt-7 inline-block border border-[#b88a32] bg-[#b88a32] px-8 py-4 text-center text-sm font-bold uppercase tracking-[0.09em] text-[#171008] transition hover:bg-[#d0a64c] sm:text-base"
+          >
+            Create Your First NPC Free
+          </Link>
         </section>
 
         <section className="mt-14 w-full max-w-6xl">

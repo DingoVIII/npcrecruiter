@@ -14,3 +14,5 @@
 .characterHeading h2 { font-weight:normal; font-size:clamp(30px,3vw,42px); margin:10px 0 4px; color:#f5e5c8; }
 .characterHeading .subtitle { margin-bottom:13px; }
 .characterInfo { padding-top:4px; }
+
+.topBarActions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:flex-end}.resetButton{background:transparent;border:1px solid #98764b;color:#e7c995;padding:8px 12px;cursor:pointer;font:700 11px Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase}.resetButton:hover:not(:disabled){background:#49331f}.resetButton:disabled{opacity:.5;cursor:not-allowed}

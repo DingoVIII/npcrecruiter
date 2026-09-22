@@ -179,12 +179,20 @@ export default function QuestGiverPage() {
     if (data) { trackEvent("quest_giver_portrait_commissioned", { style }); setNpc({ ...npc, portraitUrl: data.portraitUrl }); }
   }
   const editField = (field: Exclude<keyof Npc, "appearance" | "portraitUrl">, value: string) => { if (npc) setNpc({ ...npc, [field]: value }); };
+  function resetQuestGiver() {
+    if (busy) return;
+    if ((npc || questHook || fullQuest) && !window.confirm("Start over? This clears the current unsaved quest giver, portrait and adventure from this screen. Saved guild entries will remain.")) return;
+    sessionStorage.removeItem("npc-recruiter-quest-session");
+    sessionStorage.removeItem(QUEST_GIVER_PREFILL_KEY);
+    sessionStorage.removeItem(PENDING_NPC_KEY);
+    window.location.assign("/quest-giver");
+  }
   const adventureBody = stripAdventureTitle(fullQuest);
 
   return <main className={styles.page}>
     <div className={styles.shell}>
       <header className={styles.header}><div className={styles.eyebrow}>THE GUILDMASTER&apos;S WORKSHOP</div><h1>Quest <em>Giver</em></h1><p>Give a stranger a story. Give your players a reason to care.</p></header>
-      <div className={styles.topBar}><span className={styles.tag}>✧ ONE CHARACTER · ONE ADVENTURE</span><span className={styles.allowance}>{!signedIn ? "Free text generation · Sign in to save" : "Your guild awaits"}</span></div>
+      <div className={styles.topBar}><span className={styles.tag}>✧ ONE CHARACTER · ONE ADVENTURE</span><div className={styles.topBarActions}><span className={styles.allowance}>{!signedIn ? "Free text generation · Sign in to save" : "Your guild awaits"}</span><button type="button" className={styles.resetButton} disabled={busy} onClick={resetQuestGiver}>Start over ↺</button></div></div>
       <section className={styles.generator} aria-label="Create a quest giver">
         <div className={styles.generatorTitle}><div><span className={styles.kicker}>THE SUMMONING</span><h2>Create your character</h2></div>{npc && <button className={styles.textButton} onClick={() => setShowOptions(!showOptions)}>{showOptions ? "Hide options ↑" : "New character options ↓"}</button>}</div>
         {showOptions && <div className={styles.generatorBody}><div className={styles.options}><label>Location<select value={location} onChange={e => setLocation(e.target.value)}>{locations.map(option => <option key={option}>{option}</option>)}</select></label><label>Cultural / Fantasy Inspiration<select value={inspiration} onChange={e => setInspiration(e.target.value)}>{inspirations.map(option => <option key={option}>{option}</option>)}</select></label><label>Species<select value={chosenSpecies} onChange={e => setChosenSpecies(e.target.value)}>{speciesOptions.map(option => <option key={option}>{option}</option>)}<option>Custom</option></select>{chosenSpecies === "Custom" && <input maxLength={70} placeholder="Custom species" value={customSpecies} onChange={e => setCustomSpecies(e.target.value)} />}</label><label>Gender<select value={genderMix} onChange={e => setGenderMix(e.target.value)}>{genders.map(option => <option key={option}>{option}</option>)}</select></label></div><button className={styles.primaryButton} disabled={busy} onClick={generate}>{busy ? "Working your magic…" : "Generate quest giver ✦"}</button></div>}

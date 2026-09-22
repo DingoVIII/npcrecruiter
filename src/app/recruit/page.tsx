@@ -551,6 +551,13 @@ function updateNpc(index: number, updatedNpc: Npc) {
     }
   }
 
+  function resetRecruitment() {
+    if (isRecruiting || isRefreshingAll || isGeneratingPortraits || portraitJobId) return;
+    if (npcs.some(Boolean) && !window.confirm("Start over? This clears all four characters, confirmations and portraits from this screen. Previously saved casts will remain in My Guild.")) return;
+    sessionStorage.removeItem("npc-recruiter-cast-session");
+    window.location.assign("/recruit");
+  }
+
   async function refreshAllCharacters() {
     if (isRecruiting || isRefreshingAll || isGeneratingPortraits || !hasSpecies ||
         npcs.some((npc) => Boolean(npc?.portraitUrl))) return;
@@ -1478,6 +1485,12 @@ function downloadEntireCast() {
 
           <div className="flex min-h-0 flex-1 flex-col px-5 pt-5 pb-4">
             <div className="mb-3 grid shrink-0 grid-cols-3 gap-2">
+              <button type="button" onClick={resetRecruitment}
+                disabled={isRecruiting || isRefreshingAll || isGeneratingPortraits || Boolean(portraitJobId)}
+                title="Clear this unsaved cast and return to four empty character slots"
+                className="col-span-3 border border-[#a98035] bg-[#281e14] px-2 py-2 text-[10px] font-bold uppercase tracking-[0.08em] text-[#ead7a9] transition hover:bg-[#46331e] disabled:cursor-not-allowed disabled:opacity-50">
+                Start Over · Clear Cast ↺
+              </button>
               <button type="button" onClick={() => void refreshAllCharacters()}
                 disabled={!hasSpecies || isRecruiting || isRefreshingAll || isGeneratingPortraits || npcs.some((npc) => Boolean(npc?.portraitUrl))}
                 title="Replaces all four characters in one generation"

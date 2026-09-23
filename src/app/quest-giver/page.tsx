@@ -16,22 +16,12 @@ import { trackEvent } from "@/lib/analytics";
 import { genders, inspirations, locations, speciesOptions } from "@/lib/generationOptions";
 import { portraitStyles, type PortraitStyle } from "@/lib/portraitStyles";
 import styles from "./quest-giver.module.css";
+import { downloadNpcPdf, downloadAdventurePdf } from "@/lib/pdf/adventureExport";
 
 type Npc = { name: string; gender: string; species: string; occupation: string; appearance: string[]; personality: string; roleplayingCue: string; portraitPrompt: string; portraitUrl?: string };
 type Pending = { npc: Npc; questHook: string; fullQuest: string };
 const displayLabel = (value: string) => value.replace(/\b[a-z]/g, letter => letter.toUpperCase());
 const slug = (value: string) => value.replace(/[^a-z0-9-]/gi, "-");
-
-function downloadText(name: string, content: string) {
-  const url = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${slug(name)}.txt`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
 
 function AdventureText({ text }: { text: string }) {
   const lines = text.split(/\r?\n/);
@@ -158,7 +148,7 @@ export default function QuestGiverPage() {
   function download() {
     if (!npc) return;
     const savedQuest = fullQuest ? withAdventureTitle(fullQuest, adventureTitle) : fullQuest;
-    downloadText(npc.name, `${npc.name}\n${displayLabel(npc.gender)} ${displayLabel(npc.species)} | ${npc.occupation}\nAppearance: ${npc.appearance?.join(", ")}\nPersonality: ${npc.personality}\nRoleplaying cue: ${npc.roleplayingCue}\nPortrait prompt: ${npc.portraitPrompt}\n\nQuest hook: ${questHook}\n\n${savedQuest}`);
+    downloadNpcPdf(npc, questHook, savedQuest);
   }
   async function developQuest() {
     if (!npc || fullQuest || busy) return;
@@ -216,7 +206,7 @@ export default function QuestGiverPage() {
         </aside>
         <section className={styles.journal} aria-label="Adventure journal"><div className={styles.journalTop}><div><span className={styles.kicker}>02 / THE ADVENTURE</span><h2>Adventure Journal</h2></div><span className={styles.journalEmblem}>✧</span></div>
           <div className={styles.paper}><div className={styles.paperInner}>{fullQuest ? <><div className={styles.paperEyebrow}>A QUEST FOR YOUR TABLE</div><input aria-label="Adventure title" className={styles.adventureTitleEditor} value={adventureTitle} onChange={e => setAdventureTitle(e.target.value)} maxLength={120} /><p className={styles.adventureByline}>Featuring {npc.name} · Ready to play</p><div className={styles.ornament}>❧</div><AdventureText text={adventureBody} /></> : <div className={styles.emptyAdventure}><div className={styles.emptyMark}>❧</div><div className={styles.paperEyebrow}>AN UNWRITTEN TALE</div><h2>Every legend begins<br />with a choice.</h2><p>{npc.name} has a story to tell. Develop the full adventure to discover the characters, locations, complications and choices waiting for your players.</p><div className={styles.hookPreview}><span>THE FIRST THREAD</span><p>{questHook}</p></div></div>}</div></div>
-          <div className={styles.journalFooter}>{fullQuest ? <><span>✦ Adventure complete</span><button onClick={() => { const savedQuest = withAdventureTitle(fullQuest, adventureTitle); downloadText(`${npc.name}-adventure`, savedQuest); }}>Download adventure ↓</button><button onClick={() => setEditingQuest(!editingQuest)}>{editingQuest ? "Finish editing ✓" : "Edit adventure ✎"}</button></> : <><span>Full adventure · 1 Guild Token</span><button className={styles.primaryButton} disabled={busy} onClick={developQuest}>{busy ? "Writing your adventure…" : "Develop full quest ✦"}</button></>}</div>
+          <div className={styles.journalFooter}>{fullQuest ? <><span>✦ Adventure complete</span><button onClick={() => { const savedQuest = withAdventureTitle(fullQuest, adventureTitle); downloadAdventurePdf(npc, questHook, savedQuest); }}>Download adventure ↓</button><button onClick={() => setEditingQuest(!editingQuest)}>{editingQuest ? "Finish editing ✓" : "Edit adventure ✎"}</button></> : <><span>Full adventure · 1 Guild Token</span><button className={styles.primaryButton} disabled={busy} onClick={developQuest}>{busy ? "Writing your adventure…" : "Develop full quest ✦"}</button></>}</div>
           {editingQuest && fullQuest && <div className={styles.questEditor}><label htmlFor="quest-text">Edit the complete adventure</label><textarea id="quest-text" value={fullQuest} onChange={e => setFullQuest(e.target.value)} rows={20} /><p>Your edits are kept in this browser session. Save your NPC to preserve the adventure in your guild.</p></div>}
         </section>
       </div> : <div className={styles.welcome}><span>✧</span><h2>A stranger is waiting to be discovered.</h2><p>Choose a setting above and summon your first quest giver. The quick quest hook is free.</p></div>}

@@ -1,3 +1,4 @@
+import { downloadGuildPdf } from "@/lib/pdf/adventureExport";
 "use client";
 
 import { useEffect, useState } from "react";
@@ -1161,23 +1162,19 @@ async function downloadPrintableCast() {
 
 function downloadEntireCast() {
   if (npcs.length !== 4) return;
-  const content = npcs.map((npc, index) => [
-    `NPC ${index + 1}: ${npc.name}`,
-    `${displayLabel(npc.gender)} ${displayLabel(npc.species)} | ${npc.occupation}`,
-    `Appearance: ${npc.appearance.join(", ")}`,
-    `Personality: ${npc.personality}`,
-    `Roleplaying cue: ${npc.roleplayingCue}`,
-    ...(npc.questHook ? [`Quest hook: ${npc.questHook}`] : []),
-    `Portrait prompt: ${npc.portraitPrompt}`,
-    `Portrait URL: ${npc.portraitUrl || "Not commissioned"}`,
-  ].join("\n")).join("\n\n----------------------------------------\n\n");
-  const url = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "npc-recruiter-cast.txt";
-  link.click();
-  URL.revokeObjectURL(url);
-  trackEvent("npc_downloaded", { format: "text_cast" });
+  downloadGuildPdf("npc-recruiter-cast", "Your Recruited Cast", "Four characters for your next session", [], npcs.map((npc, index) => ({
+    title: `${index + 1}. ${npc.name}`,
+    body: [
+      `${displayLabel(npc.gender)} ${displayLabel(npc.species)} | ${npc.occupation}`,
+      `Appearance: ${npc.appearance.join(", ")}`,
+      `Personality: ${npc.personality}`,
+      `Roleplaying cue: ${npc.roleplayingCue}`,
+      ...(npc.questHook ? [`Quest hook: ${npc.questHook}`] : []),
+      `Portrait prompt: ${npc.portraitPrompt}`,
+      `Portrait URL: ${npc.portraitUrl || "Not commissioned"}`,
+    ].join("\n"),
+  })));
+  trackEvent("npc_downloaded", { format: "pdf_cast" });
 }
 
   async function signOut() {

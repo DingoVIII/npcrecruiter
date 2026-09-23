@@ -1,4 +1,5 @@
 import Link from "next/link";
+import DownloadQuestPdf from "./DownloadQuestPdf";
 import { notFound, redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
@@ -75,6 +76,7 @@ export default async function SavedQuestGiverPage({
               </p>
             </div>
 
+            <DownloadQuestPdf npc={npc} questHook={saved.quest_hook || ""} fullQuest={saved.full_quest || ""} />
             <Link
               href="/my-casts"
               className="border border-[#8f713b] bg-[#fff9ec] px-4 py-3 text-xs font-bold uppercase tracking-wide transition hover:bg-[#efe1c4]"

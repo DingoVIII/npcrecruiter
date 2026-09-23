@@ -96,6 +96,14 @@ export default async function HomePage() {
           </Link>
         </section>
 
+        <section className="mt-14 w-full max-w-5xl border border-[#6e5428] bg-[#20170d] p-6 text-center sm:p-10">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#d7b775]">Free Complete Adventure</p>
+          <h2 className="mt-3 font-serif text-3xl font-bold">Meet Sorrel Nema</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-[#c4b292]">A goblin with a proposition. Watch Sorrel introduce her quest, then download the complete adventure, her original portrait, and the video to use at your table. No account required.</p>
+          <video controls playsInline preload="metadata" className="mx-auto mt-7 max-h-[560px] w-full max-w-sm border border-[#8d6b2c] bg-black" src="/downloads/sorrel-nema.mp4" aria-label="Sorrel Nema delivers her quest" />
+          <a href="/downloads/sorrel-nema-complete-quest.zip" download="Sorrel-Nema-Complete-Quest.zip" className="mt-7 inline-block border border-[#b88a32] bg-[#b88a32] px-8 py-4 text-center text-sm font-bold uppercase tracking-[0.09em] text-[#171008] transition hover:bg-[#d0a64c]">Download Sorrel&apos;s Complete Quest Free</a>
+        </section>
+
         <section className="mt-14 w-full max-w-6xl">
           <div className="text-center"><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#d7b775]">YouTube NPC Library</p><h2 className="mt-3 font-serif text-3xl font-bold">Meet the Guild&apos;s Quest Givers</h2><p className="mx-auto mt-3 max-w-2xl text-[#cdbb94]">Every character has a story. Meet the NPCs featured in our adventures and bring their quests to your own table.</p></div>
           {featured.length === 0 ? <div className="mt-7 border border-dashed border-[#6e5428] bg-[#20170d] p-12 text-center text-[#cdbb94]">New featured quest givers will appear here soon.</div> : <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{featured.map((npc) => <article key={npc.id} className="border border-[#6e5428] bg-[#20170d] p-4"><div className="aspect-[4/3] overflow-hidden border border-[#8d6b2c] bg-[#171008]">{npc.portrait_url ? <img src={npc.portrait_url} alt={`Portrait of ${npc.name}`} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-4xl text-[#d9aa4b]">✦</div>}</div><h3 className="mt-4 font-serif text-2xl font-bold">{npc.name}</h3><p className="text-sm text-[#cdbb94]">{npc.species} · {npc.occupation}</p><p className="mt-3 line-clamp-3 text-sm text-[#c4b292]">{npc.personality}</p><p className="mt-3 font-serif font-bold text-[#e9c782]">{npc.quest_title}</p><p className="mt-1 line-clamp-2 text-sm italic text-[#cdbb94]">{npc.quest_hook}</p><Link href={`/featured/${npc.slug}`} className="mt-5 block border border-[#b88a32] bg-[#b88a32] px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-[#171008] transition hover:bg-[#d0a64c]">Explore Quest Giver</Link></article>)}</div>}
